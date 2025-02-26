@@ -57,16 +57,9 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'project.urls'
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'dummy123sdum@gmail.com'
-EMAIL_HOST_PASSWORD = 'xrif pilc rslp qwbd'
 
 AUTH_USER_MODEL = 'core.CustomUser'
 
-LOGIN_REDIRECT_URL = '/'
 
 TEMPLATES = [
     {
@@ -139,6 +132,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+LOGIN_REDIRECT_URL = '/'
 
 
 STATIC_URL = 'static/'
@@ -157,3 +151,10 @@ MEDIA_URL = '/media/'
 
 # Directory where uploaded media files will be stored
 MEDIA_ROOT = BASE_DIR / 'media'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'dummy123sdum@gmail.com'
+EMAIL_HOST_PASSWORD = 'xrif pilc rslp qwbd'
