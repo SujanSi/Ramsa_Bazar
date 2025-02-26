@@ -2,24 +2,34 @@ from django.shortcuts import render,get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from .models import *
+import random
 
 
 # Create your views here.
 def home(request):
-    return render(request, "home.html") 
+    categories = Category.objects.all().order_by('name')
+    # Get all products
+    products = Product.objects.all()
+    
+    # Select a random product for initial display (optional)
+    initial_products = products[:8]
 
-@login_required
-def product_list(request):
-    products = Product.objects.filter(vendor=request.user)
-    return render(request, 'vendor/product_list.html', {'products': products})
+    context = {
+        'categories': categories,
+        'products': products,
+        'initial_products': initial_products,
+    }
+
+    return render(request, "home.html", context)
+
 
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    return render(request, 'vendor/product_detail.html', {'product': product})
+    return render(request, 'shop/product-detail.html', {'product': product})
 
 def get_cart(user):
     """Retrieve or create a cart for the user."""
-    cart, created = CartItem.objects.get_or_create(user=user)
+    cart, created = Cart.objects.get_or_create(user=user)
     return cart
 
 @login_required
@@ -39,7 +49,7 @@ def add_to_cart(request, product_id):
             cart_item.quantity = quantity
         cart_item.save()
 
-        return redirect('vendor:cart') 
+        return redirect('shop:cart') 
 
     return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
 
@@ -55,11 +65,164 @@ def view_cart(request):
     cart_total = sum(item.total_price for item in cart_items)
 
 
-    return render(request, "vendor/cart.html", {"cart_items": cart_items, "cart_total": cart_total})
+    return render(request, "shop/cart.html", {"cart_items": cart_items, "cart_total": cart_total})
+
+@login_required
+def update_cart(request, item_id):
+    """Update the quantity of a cart item."""
+    cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
+    if request.method == "POST":
+        quantity = int(request.POST.get("quantity", 1))
+        if quantity <= 0:
+            cart_item.delete()
+        else:
+            cart_item.quantity = min(quantity, cart_item.product.stock or 100)
+            cart_item.save()
+    return redirect('shop:cart')
 
 @login_required
 def remove_from_cart(request, item_id):
     """Remove an item from the cart."""
     cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
     cart_item.delete()
-    return redirect('vendor:cart')
+    return redirect('shop:cart')
+
+@login_required
+def checkout(request):
+    """Handle checkout process."""
+    if request.method == "POST":
+        cart = get_cart(request.user)
+        cart_items = CartItem.objects.filter(cart=cart)
+
+        if not cart_items:
+            return redirect('shop:cart')
+
+        # Extract form data
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        country = request.POST.get('country', '').strip()
+        state = request.POST.get('state', '').strip()
+        postal_code = request.POST.get('postal_code', '').strip()
+
+        # Validate required fields
+        if not first_name or not last_name or not country or not state or not postal_code:
+            return redirect('shop:cart')  # Redirect back if validation fails
+
+        # Create Checkout instance
+        checkout = Checkout.objects.create(
+            user=request.user,
+            first_name=first_name,
+            last_name=last_name,
+            email=request.user.email or "unknown@example.com",
+            address=f"{country}, {state}",
+            city=state,
+            postal_code=postal_code,
+            phone=request.user.profile.phone if hasattr(request.user, 'profile') else "N/A",
+        )
+
+        return redirect('shop:order_confirmation' )
+
+    return redirect('shop:cart')
+
+
+from decimal import Decimal
+@login_required
+def order_confirmation(request):
+    # Get the user's cart
+    cart = Cart.objects.get(user=request.user)
+    cart_items = CartItem.objects.filter(cart=cart)
+
+    if not cart_items:
+        return redirect('shop:cart')
+
+    # Get the latest checkout instance for the user
+    try:
+        checkout = Checkout.objects.filter(user=request.user).latest('created_at')
+    except Checkout.DoesNotExist:
+        return redirect('shop:cart')
+
+    # Calculate subtotal (sum of Decimal values)
+    subtotal = sum(item.product.price * item.quantity for item in cart_items)
+    
+    # Define shipping and tax as Decimal
+    shipping = Decimal('4.00')  # Convert float to Decimal
+    tax = Decimal('0.00')       # Convert float to Decimal
+    grand_total = subtotal + shipping + tax
+
+    # Context to pass to the template
+    context = {
+        'checkout': checkout,
+        'cart_items': cart_items,
+        'subtotal': subtotal,
+        'shipping': shipping,
+        'tax': tax,
+        'grand_total': grand_total,
+        'message': 'Please review your order before confirmation.',
+    }
+
+    return render(request, 'shop/checkout.html', context)
+
+
+import logging
+from django.db import transaction
+
+# Set up logging
+logger = logging.getLogger(__name__)
+
+@login_required
+def place_order(request):
+    if request.method == "POST":
+        logger.info(f"Place order initiated for user: {request.user}")
+        cart = get_cart(request.user)
+        cart_items = CartItem.objects.filter(cart=cart)
+
+        if not cart_items:
+            logger.warning("Cart is empty, redirecting to cart.")
+            return redirect('shop:cart')
+
+        try:
+            checkout = Checkout.objects.filter(user=request.user).latest('created_at')
+            logger.info(f"Checkout retrieved: {checkout}")
+        except Checkout.DoesNotExist:
+            logger.error("No checkout found, redirecting to cart.")
+            return redirect('shop:cart')
+
+        subtotal = sum(item.product.price * item.quantity for item in cart_items)
+        shipping = Decimal('4.00')
+        grand_total = subtotal + shipping
+
+        payment_method = request.POST.get('payment_method')
+        logger.info(f"Payment method selected: {payment_method}")
+
+        valid_payment_methods = [key for key, value in Order.Payment_Method]
+        if payment_method not in valid_payment_methods:
+            logger.error(f"Invalid payment method: {payment_method}. Valid options: {valid_payment_methods}")
+            return redirect('shop:order_confirmation')
+
+        try:
+            with transaction.atomic():
+                for item in cart_items:
+                    Order.objects.create(
+                        product=item.product.name,
+                        price=item.product.price,
+                        quantity=item.quantity,
+                        total_price=item.product.price * item.quantity,
+                        payment_method=payment_method,
+                        status="Pending",
+                    )
+                    cart_items.delete()
+                    logger.info(f"Order created for product: {item.product.name}")
+                cart_items.delete()
+                logger.info("Cart cleared successfully.")
+        except Exception as e:
+            logger.error(f"Failed to create orders: {str(e)}")
+            return redirect('shop:order_confirmation')
+
+        return render(request, 'shop/checkout.html', {
+            'message': 'Order has been placed successfully!',  # Updated message
+            'checkout': checkout,  # Optional: keep for confirmation
+            'grand_total': grand_total,  # Optional: keep for confirmation
+        })
+
+    logger.warning("Non-POST request to place_order, redirecting to cart.")
+    return redirect('shop:cart')

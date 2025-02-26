@@ -5,10 +5,12 @@ app_name = 'shop'
 
 urlpatterns = [
     path('', home, name='home'),
-    path('products/', product_list, name='product_list'),
-    path('product/<int:product_id>/', product_detail, name='product_detail'),
-    path('product/<int:product_id>/', product_detail, name='product_detail'),
+    path('product/<int:product_id>/',product_detail, name='product_detail'),
     path('cart/', view_cart, name='cart'),
     path('cart/add/<int:product_id>/', add_to_cart, name='add_to_cart'),
+    path('cart/update/<int:item_id>/', update_cart, name='update_cart'),
     path('cart/remove/<int:item_id>/', remove_from_cart, name='remove_from_cart'),
+    path('checkout/', checkout, name='checkout'),
+    path('order-confirmation/', order_confirmation, name='order_confirmation'),
+    path('place-order/', place_order, name='place_order'),
 ]

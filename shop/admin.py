@@ -25,7 +25,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(CartItem)
 class CartItemAdmin(admin.ModelAdmin):
-    list_display=('product','quantity','unitprice','total','user')
+    list_display = ['cart', 'product', 'quantity', 'created_at']
     
 @admin.register(Checkout)
 class CheckoutAdmin(admin.ModelAdmin):

@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 
 
@@ -41,7 +41,12 @@ class Size(models.Model):
         return self.name
 
 class Product(models.Model):
-    vendor = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'vendor'})
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        limit_choices_to={'role': 'vendor'},
+        related_name='shop_products'
+    )
     name = models.CharField(max_length=255,null=False, blank=False,verbose_name="Product Name",db_index=True)
     description = models.CharField(max_length=255,null=True, blank=True,db_index=True)
     additional_information = models.CharField(max_length=255,null=True, blank=True,db_index=True)
@@ -83,32 +88,27 @@ class Reviews(models.Model):
     def __str__(self):
         return self.product.name
     
-    
+
+class Cart(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="shop_cart")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Cart - {self.user.full_name}"
+
 class CartItem(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE,db_index=True)
-    quantity = models.PositiveIntegerField(default=0)
-    unitprice=models.PositiveIntegerField(default=0)
-    total=models.PositiveIntegerField(default=0)
-    user = models.ForeignKey(User, on_delete=models.CASCADE,db_index=True)
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)   
-     
-    class Meta:
-        verbose_name = "Cart Item"
-        indexes = [models.Index(fields=['product','user'])]
     
     def __str__(self):
-        return f'{self.quantity} x {self.product.name}'
-    
-    
-    def save(self, *args, **kwargs):
-        self.unitprice = self.product.price
-        self.total = self.quantity * self.unitprice
-        super().save(*args, **kwargs)
+        return f"{self.quantity} x {self.product.name}"  # Fixed to use cart.user
 
 
 class Checkout(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,db_index=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, db_index=True)
     first_name = models.CharField(max_length=100,db_index=True)
     last_name = models.CharField(max_length=100)
     email = models.EmailField(db_index=True)
