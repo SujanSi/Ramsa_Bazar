@@ -8,15 +8,17 @@ import random
 # Create your views here.
 def home(request):
     categories = Category.objects.all().order_by('name')
-    # Get all products
-    products = Product.objects.all()
+
+    # Get only selling products
+    selling_products = Product.objects.filter(product_type='selling')
     
     # Select a random product for initial display (optional)
-    initial_products = products[:8]
+    initial_products = selling_products[:8]
+
 
     context = {
         'categories': categories,
-        'products': products,
+        'selling_products': selling_products,
         'initial_products': initial_products,
     }
 

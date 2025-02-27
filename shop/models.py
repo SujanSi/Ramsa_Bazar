@@ -41,6 +41,16 @@ class Size(models.Model):
         return self.name
 
 class Product(models.Model):
+    SELLING = 'selling'
+    RENTING = 'renting'
+    AUCTION = 'auction'
+
+    PRODUCT_TYPE_CHOICES = [
+        (SELLING, 'Selling'),
+        (RENTING, 'Renting'),
+        (AUCTION, 'Auction'),
+    ]
+
     vendor = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
@@ -51,7 +61,7 @@ class Product(models.Model):
     description = models.CharField(max_length=255,null=True, blank=True,db_index=True)
     additional_information = models.CharField(max_length=255,null=True, blank=True,db_index=True)
     price = models.DecimalField(max_digits=10, decimal_places=2,null=False, blank=False,verbose_name="Product Price",db_index=True)
-    discount=models.DecimalField(decimal_places=3, max_digits=5,null=True, blank=True,db_index=True)
+    discount=models.DecimalField(decimal_places=3, max_digits=10,null=True, blank=True,db_index=True)
     availability = models.IntegerField(null=True, blank=True,db_index=True)
     sku = models.CharField(max_length=100,null=True, blank=True,db_index=True)
     size=models.ForeignKey(Size, on_delete=models.CASCADE,null=True, blank=True,db_index=True)
@@ -60,12 +70,20 @@ class Product(models.Model):
     categories = models.ForeignKey(Category, on_delete=models.CASCADE,null=True, blank=True,db_index=True)
     stock=models.IntegerField(null=True, blank=True,db_index=True)
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True,db_index=True)
+
+    product_type = models.CharField(
+        max_length=10, 
+        choices=PRODUCT_TYPE_CHOICES, 
+        default=SELLING, 
+        db_index=True
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         verbose_name = "Product"
-        indexes = [models.Index(fields=['name','description','additional_information','price','discount','availability','sku','size','image','features','categories','stock','brand'])]
+        indexes = [models.Index(fields=['name','description','additional_information','price','discount','availability','sku','size','image','features','categories','stock','brand','product_type'])]
 
 
     def __str__(self):
