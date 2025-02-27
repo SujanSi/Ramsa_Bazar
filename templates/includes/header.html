@@ -116,7 +116,7 @@
                 <ul style="width:200px">
                     {% for category in categories %}
                     <li>
-                        <a href="#">{{ category.name }}</a>
+                        <a href="{% url 'shop:category_products' category_id=category.id %}">{{ category.name }}</a>
                     </li>
                     {% empty %}
                     <li><a href="#">No Categories Available</a></li>

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block container %}
+<div class="category-products">
+    <h1>{{ category.name }} Products</h1>
+    
+    {% if products %}
+        <div class="product-list">
+            {% for product in products %}
+                <div class="product-item">
+                    <a href="{% url 'shop:product_detail' product_id=product.id %}">
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width: 200px;">
+                        {% endif %}
+                        <h3>{{ product.name }}</h3>
+                        <p>Price: ${{ product.price }}</p>
+                        {% if product.discount %}
+                            <p>Discount: {{ product.discount }}%</p>
+                        {% endif %}
+                        <p>Type: {{ product.get_product_type_display }}</p>
+                        {% if product.stock %}
+                            <p>Stock: {{ product.stock }}</p>
+                        {% endif %}
+                        {% if product.brand %}
+                            <p>Brand: {{ product.brand }}</p>
+                        {% endif %}
+                    </a>
+                </div>
+            {% empty %}
+                <p>No products available in this category.</p>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No products available in this category.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -29,6 +29,23 @@ def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'shop/product-detail.html', {'product': product})
 
+def category_products(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    products = Product.objects.filter(categories=category)
+    categories = Category.objects.all().order_by('name')
+    
+    print(f"Category ID: {category_id}")
+    print(f"Category Name: {category.name}")
+    print(f"Number of Products: {products.count()}")
+    
+    context = {
+        'category': category,
+        'products': products,
+        'categories': categories,
+    }
+    return render(request, 'shop/category_products.html', context)
+
+
 def get_cart(user):
     """Retrieve or create a cart for the user."""
     cart, created = Cart.objects.get_or_create(user=user)
