@@ -168,6 +168,7 @@ from django.db import transaction
 from django.http import HttpResponse
 import requests
 import uuid
+import json
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -214,8 +215,48 @@ def place_order(request):
         logger.info("Session data stored: grand_total and cart_items")
 
         if payment_method == 'Khalti':
-            print("Redirecting to khalti_payment")
-            return redirect('shop:khalti_payment')  # Ensure this matches your URL name
+            # Directly initiate Khalti payment
+            logger.info("Initiating Khalti payment directly")
+            transaction_uuid = uuid.uuid4()
+            amount = int(grand_total * 100)  # Convert to paisa
+
+            payload = {
+                "return_url": request.build_absolute_uri('/khalti_verify'),
+                "website_url": "http://localhost:8000",  # Replace with your actual website URL
+                "amount": amount,
+                "purchase_order_id": str(transaction_uuid),
+                "purchase_order_name": "Order Payment",
+                "customer_info": {
+                    "name": request.user.full_name,
+                    "email": request.user.email,
+                    "phone": "9800000001"  # Replace with actual user phone
+                }
+            }
+
+            headers = {
+                'Authorization': 'Key 133eff2bf18d4888a8e0e699ede0f774',  # Replace with your Khalti secret key
+                'Content-Type': 'application/json',
+            }
+
+            url = "https://a.khalti.com/api/v2/epayment/initiate/"
+            try:
+                response = requests.post(url, headers=headers, json=payload)
+                logger.info(f"Khalti API response: {response.status_code} - {response.text}")
+                if response.status_code == 200:
+                    new_res = json.loads(response.text)
+                    payment_url = new_res.get('payment_url')
+                    if payment_url:
+                        logger.info(f"Redirecting to Khalti payment URL: {payment_url}")
+                        return redirect(payment_url)
+                    else:
+                        logger.error("No payment_url in Khalti response")
+                        return redirect('shop:cart')
+                else:
+                    logger.error(f"Khalti API failed with status {response.status_code}: {response.text}")
+                    return redirect('shop:cart')
+            except Exception as e:
+                logger.error(f"Error during Khalti API call: {str(e)}")
+                return redirect('shop:cart')
         else:
             try:
                 with transaction.atomic():
@@ -242,81 +283,6 @@ def place_order(request):
 
     logger.warning("Non-POST request to place_order, redirecting to cart.")
     return redirect('shop:cart')
-
-def khalti_payment(request):
-    logger.info("Entered khalti_payment view")
-    transaction_uuid = uuid.uuid4()
-    print(transaction_uuid)
-    grand_total = request.session.get('grand_total', 0)
-    amount = int(grand_total * 100)  # Convert to paisa
-
-    if grand_total == 0:
-        logger.error("No grand_total found in session, redirecting to cart")
-        return redirect('shop:cart')
-
-    context = {
-        'purchase_order_id': str(transaction_uuid),
-        'amount': amount,
-        'return_url': request.build_absolute_uri('/shop/khalti_verify/'),
-    }
-    logger.info(f"Khalti payment context prepared: {context}")
-    return render(request, 'shop/khalti_payment.html', context)
-
-import json
-
-def submit_khalti_payment(request):
-    logger.info("Entered submit_khalti_payment view")
-    if request.method == 'POST':
-        purchase_order_id = request.POST.get('purchase_order_id')
-        amount = request.POST.get('amount')
-        return_url = request.POST.get('return_url')
-
-        logger.info(f"Received POST data: purchase_order_id={purchase_order_id}, amount={amount}, return_url={return_url}")
-
-        if not all([purchase_order_id, amount, return_url]):
-            logger.error("Missing required POST data")
-            return HttpResponse("Missing payment data", status=400)
-
-        payload = {
-            "return_url": return_url,
-            "website_url": "http://localhost:8000",  # Replace with your actual website URL
-            "amount": amount,
-            "purchase_order_id": purchase_order_id,
-            "purchase_order_name": "Order Payment",
-            "customer_info": {
-                "name": request.user.full_name,
-                "email": request.user.email,
-                "phone": "9800000001"  # Replace with actual user phone
-            }
-        }
-
-        headers = {
-            'Authorization': 'Key 133eff2bf18d4888a8e0e699ede0f774',  # Replace with your Khalti secret key
-            'Content-Type': 'application/json',
-        }
-
-        url = "https://a.khalti.com/api/v2/epayment/initiate/"
-        try:
-            response = requests.post(url, headers=headers, json=payload)
-            logger.info(f"Khalti API response: {response.status_code} - {response.text}")
-            if response.status_code == 200:
-                new_res = json.loads(response.text)
-                payment_url = new_res.get('payment_url')
-                if payment_url:
-                    logger.info(f"Redirecting to Khalti payment URL: {payment_url}")
-                    return redirect(payment_url)
-                else:
-                    logger.error("No payment_url in Khalti response")
-                    return redirect('shop:cart')
-            else:
-                logger.error(f"Khalti API failed with status {response.status_code}: {response.text}")
-                return redirect('shop:cart')
-        except Exception as e:
-            logger.error(f"Error during Khalti API call: {str(e)}")
-            return redirect('shop:cart')
-
-    logger.warning("Non-POST request to submit_khalti_payment")
-    return HttpResponse("Invalid Request", status=405)
 
 @login_required
 def khalti_verify(request):

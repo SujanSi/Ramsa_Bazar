@@ -13,9 +13,6 @@ urlpatterns = [
     path('checkout/', checkout, name='checkout'),
     path('order-confirmation/', order_confirmation, name='order_confirmation'),
     path('place-order/', place_order, name='place_order'),
-
-    path('khalti_payment/', khalti_payment, name='khalti_payment'),
-    path('submit_khalti_payment/', submit_khalti_payment, name='submit_khalti_payment'),
-    path('khalti_verify/', khalti_verify, name='khalti_verify'),
+    path('khalti_verify', khalti_verify, name='khalti_verify'),
 
 ]
