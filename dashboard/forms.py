@@ -1,7 +1,9 @@
 from django import forms
 from core.models import CustomUser
+from django.contrib.auth.forms import PasswordChangeForm as BasePasswordChangeForm
 
-class VendorProfileUpdateForm(forms.ModelForm):
+
+class ProfileEditForm(forms.ModelForm):
     class Meta:
         model = CustomUser
         fields = ['full_name', 'email', 'phone']
@@ -10,3 +12,21 @@ class VendorProfileUpdateForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control', 'readonly': 'readonly'}),  # Email should not be changed
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+
+# Custom Password Change Form with Bootstrap styling
+class CustomPasswordChangeForm(BasePasswordChangeForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['old_password'].widget = forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter current password',
+        })
+        self.fields['new_password1'].widget = forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter new password',
+        })
+        self.fields['new_password2'].widget = forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Confirm new password',
+        })
