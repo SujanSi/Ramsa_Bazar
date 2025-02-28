@@ -8,10 +8,6 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 
-@login_required
-def vendor_dashboard(request):
-    return render(request, 'vendor/dashboard.html')
-
 
 @login_required
 def product_list(request):
