@@ -6,3 +6,7 @@ from django.contrib.auth.decorators import login_required
 @login_required
 def vendor_dashboard(request):
     return render(request, 'dashboard/home.html')
+
+@login_required
+def profile(request):
+    return render(request, 'dashboard/profile.html')
