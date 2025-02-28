@@ -27,3 +27,7 @@ def vendor_profile_view(request):
 
     return render(request, 'dashboard/profile.html', {'form': form})
 
+
+@login_required
+def profile(request):
+    return render(request, 'dashboard/profile.html')
