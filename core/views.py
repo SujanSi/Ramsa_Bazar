@@ -131,7 +131,7 @@ def user_login(request):
 
             # Redirect based on user role
             if user.role == 'vendor':
-                return redirect('vendor:vendor_dashboard')  # Redirect to vendor dashboard
+                return redirect('dashboard:vendor_dashboard')  # Redirect to vendor dashboard
             elif user.role == 'superadmin':
                 return redirect('admin:index')  # Redirect to superadmin dashboard
             else:
