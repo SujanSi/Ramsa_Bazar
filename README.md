@@ -15,3 +15,6 @@ Chat – Implements live chat and inquiry features for users and sellers.
 Notifications – Sends order updates, auction alerts, and price drop notifications.
 
 Reports – Generates reports for sales, user engagement, and platform analytics.
+
+dashboard - Manage all vendor logic and template.
+

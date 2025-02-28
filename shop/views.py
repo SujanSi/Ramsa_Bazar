@@ -361,3 +361,10 @@ def khalti_verify(request):
             return redirect('shop:cart')
 
     return HttpResponse("Invalid Request")
+
+
+def about(request):
+    return render(request, 'about.html')
+
+def contact(request):
+    return render(request, 'contact.html')
