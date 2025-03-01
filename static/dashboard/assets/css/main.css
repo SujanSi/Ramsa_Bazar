@@ -371,13 +371,13 @@ body {
 }
 
 #sidebar {
-	min-width: 220px;
-	max-width: 220px;
-	background: #fff;
-	color: #fff;
-	transition: all 0.3s;
-	border-right: 1px solid #e6ecf5;
+    min-width: 220px;
+    max-width: 220px;
+    height: 100vh; /* Full height of the viewport */
+    background: #fff;
+
 }
+
 
 #sidebar.active {
 	margin-left: -220px;

@@ -17,8 +17,8 @@ urlpatterns = [
     path('khalti_verify', khalti_verify, name='khalti_verify'),
     path('contact/', contact, name='contact'),
     path('about/', about, name='about'),
-
     path('orders/', order_list, name='order_list'),
+        path('search/', search_view, name="search")
 
 
 ]

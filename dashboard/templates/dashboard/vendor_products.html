@@ -1,96 +1,124 @@
 {% extends 'dashboard/base.html' %}
 {% load static %}
 {% block container %}
-    <h2>Vendor Products - {{ vendor.full_name }}</h2>
-    
-    <!-- Dynamic content area -->
-    <div class="content-area">
-        <div class="table-header">
-            <h3>{{ product_type|title }} Products</h3>
-            <a href="{% url 'dashboard:add_product' %}?type={{ product_type }}" class="btn btn-primary add-product-btn">Add Product</a>
-            <br>
-            <br>
-        </div>
-        {% if products %}
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Price</th>
-                        <th>Discount</th>
-                        <th>Availability</th>
-                        <th>Stock</th>
-                        <th>SKU</th>
-                        <th>Size</th>
-                        <th>Brand</th>
-                        <th>Categories</th>
-                        <th>Features</th>
-                        <th>Image</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for product in products %}
-                    <tr>
-                        <td>{{ product.name }}</td>
-                        <td>{{ product.description|default:'N/A' }}</td>
-                        <td>{{ product.price }}</td>
-                        <td>{{ product.discount|default:'N/A' }}</td>
-                        <td>{{ product.availability|default:'N/A' }}</td>
-                        <td>{{ product.stock|default:'N/A' }}</td>
-                        <td>{{ product.sku|default:'N/A' }}</td>
-                        <td>{{ product.size.name|default:'N/A' }}</td>
-                        <td>{{ product.brand.name|default:'N/A' }}</td>
-                        <td>{{ product.categories.name|default:'N/A' }}</td>
-                        <td>{{ product.features|default:'N/A' }}</td>
-                        <td>
-                            {% if product.image %}
-                                <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width: 100px; height: auto;">
-                            {% else %}
-                                N/A
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{% url 'dashboard:edit_product' product.id %}?type={{ product_type }}" class="btn btn-sm btn-warning">Edit</a>
-                            <form action="{% url 'dashboard:remove_product' product.id %}?type={{ product_type }}" method="post" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to remove this product?');">Remove</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>No {{ product_type }} products available.</p>
-        {% endif %}
-    </div>
 
-    <style>
-        .content-area {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px solid #ddd;
-        }
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: auto; /* Allows columns to adjust based on content */
-        }
-        .table th, .table td {
-            padding: 8px;
-            border: 1px solid #ddd;
-            text-align: left;
-            vertical-align: middle;
-        }
-        .table th {
-            background-color: #f5f5f5;
-            font-weight: bold;
-        }
-        .table img {
-            display: block;
-            margin: 0 auto;
-        }
-    </style>
+<div id="bodywrapper" class="container-fluid showhidetoggle">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row mt-2">
+                <div class="col-md-6 float-start">
+                    <h2 class="h4">{{ vendor.full_name }} Products</h2>
+                </div>
+                <div class="col-md-6">
+                    <ol class="breadcrumb float-end">
+                        <li class="breadcrumb-item"><a href="{% url 'shop:home' %}"> Visit Site</a></li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="content">
+                    <div class="canvas-wrapper">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="h5 text-muted">{{ product_type|title }} Products</h3>
+                            <a href="{% url 'dashboard:add_product' %}?type={{ product_type }}" 
+                               class="btn btn-sm btn-primary">
+                               <i class="fas fa-plus me-2"></i>Add Product
+                            </a>
+                        </div>
+
+                        {% if products %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped align-middle">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Price</th>
+                                        <th>Discount</th>
+                                        <th>Stock</th>
+                                        <th>SKU</th>
+                                        <th>Image</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for product in products %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ product.name }}</td>
+                                        <td class="text-muted small">{{ product.description|truncatechars:40|default:'N/A' }}</td>
+                                        <td>${{ product.price }}</td>
+                                        <td>{{ product.discount|default:'0' }}%</td>
+                                        <td>{{ product.stock|default:'N/A' }}</td>
+                                        <td><span class="badge bg-secondary">{{ product.sku|default:'N/A' }}</span></td>
+                                        <td>
+                                            {% if product.image %}
+                                            <img src="{{ product.image.url }}" alt="{{ product.name }}" 
+                                                 class="img-thumbnail" style="max-width: 60px; height: auto;">
+                                            {% else %}
+                                            <span class="text-muted">N/A</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-2">
+                                                <a href="{% url 'dashboard:edit_product' product.id %}?type={{ product_type }}" 
+                                                   class="btn btn-sm btn-warning">
+                                                   <i class="fas fa-edit"></i>
+                                                </a>
+                                                <form action="{% url 'dashboard:remove_product' product.id %}?type={{ product_type }}" 
+                                                      method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <button type="submit" 
+                                                            class="btn btn-sm btn-danger" 
+                                                            onclick="return confirm('Are you sure?');">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            No {{ product_type }} products found.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table th {
+        font-weight: 600;
+        background-color: #f9fafb;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .img-thumbnail {
+        padding: 0.25rem;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+    }
+    
+    .badge {
+        font-weight: 500;
+        letter-spacing: 0.05em;
+    }
+    
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        border-radius: 0.25rem;
+    }
+</style>
+
 {% endblock container %}
