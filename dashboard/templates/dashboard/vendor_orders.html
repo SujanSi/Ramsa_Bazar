@@ -1,82 +1,68 @@
-{% extends 'base.html' %}
+{% extends "dashboard/base.html" %}
+{% block container %}
+<h2>Vendor Orders</h2>
 
-{% block content %}
-    <h2>Your Product Orders</h2>
-
-    {% if error %}
-        <div class="alert alert-danger">{{ error }}</div>
-    {% endif %}
-
-    <!-- Status Filter -->
-    <div class="mb-3">
-        <form method="get">
-            <select name="status" onchange="this.form.submit()" class="form-control w-auto d-inline">
-                <option value="">All Statuses</option>
-                {% for status_value, status_label in status_choices %}
-                    <option value="{{ status_value }}" {% if current_status == status_value %}selected{% endif %}>
-                        {{ status_label }}
-                    </option>
-                {% endfor %}
-            </select>
-        </form>
-    </div>
-
-    <!-- Orders Table -->
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Order ID</th>
-                <th>Product</th>
-                <th>Customer</th>
-                <th>Quantity</th>
-                <th>Total Price</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Payment Method</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for order in page_obj %}
-                <tr>
-                    <td>{{ order.id }}</td>
-                    <td>{{ order.product.name }}</td>
-                    <td>{{ order.user.full_name|default:order.user.email }}</td>
-                    <td>{{ order.quantity }}</td>
-                    <td>{{ order.total_price }}</td>
-                    <td>{{ order.status|title }}</td>
-                    <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
-                    <td>{{ order.payment_method|title }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="8">No orders found</td>
-                </tr>
+{% if error %}
+    <p class="error">{{ error }}</p>
+{% else %}
+    <form method="get">
+        <label for="status">Filter by Status:</label>
+        <select name="status" id="status" onchange="this.form.submit()">
+            <option value="">All</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
             {% endfor %}
-        </tbody>
+        </select>
+    </form>
+
+    <table border="1">
+        <tr>
+            <th>Order ID</th>
+            <th>Product</th>
+            <th>Customer</th>
+            <th>Email</th>
+            <th>Quantity</th>
+            <th>Total Price</th>
+            <th>Status</th>
+            <th>Ordered On</th>
+            <th>Action</th>
+        </tr>
+        {% for order in page_obj %}
+        <tr>
+            <td>{{ order.id }}</td>
+            <td>{{ order.product.name }}</td>
+            <td>{{ order.user.full_name }}</td>
+            <td>{{ order.user }}</td>
+            <td>{{ order.quantity }}</td>
+            <td>{{ order.total_price }}</td>
+            <td>{{ order.get_status_display }}</td>
+            <td>{{ order.created_at }}</td>
+            <td>
+                <a href="{% url 'dashboard:vendor_order_update' order.id %}" class="btn">Update</a>
+            </td>
+        </tr>
+        {% endfor %}
     </table>
 
-    <!-- Pagination -->
-    {% if page_obj.has_other_pages %}
-        <nav aria-label="Page navigation">
-            <ul class="pagination">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Previous</a>
-                    </li>
-                {% endif %}
+    <!-- Pagination Controls -->
+    <div class="pagination">
+        <span class="step-links">
+            {% if page_obj.has_previous %}
+                <a href="?page=1{% if current_status %}&status={{ current_status }}{% endif %}">First</a>
+                <a href="?page={{ page_obj.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Previous</a>
+            {% endif %}
 
-                {% for num in page_obj.paginator.page_range %}
-                    <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                        <a class="page-link" href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}">{{ num }}</a>
-                    </li>
-                {% endfor %}
+            <span class="current">
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+            </span>
 
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Next</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    {% endif %}
-{% endblock %}
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}">Next</a>
+                <a href="?page={{ page_obj.paginator.num_pages }}{% if current_status %}&status={{ current_status }}{% endif %}">Last</a>
+            {% endif %}
+        </span>
+    </div>
+{% endif %}
+{% endblock container %}

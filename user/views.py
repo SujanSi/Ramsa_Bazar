@@ -15,7 +15,7 @@ def kyc_verification(request):
     kyc_exists = KYCVerification.objects.filter(user=request.user).exists()
 
     if kyc_exists:
-        return redirect('vendor:vendor_dashboard') # Redirect to the homepage if KYC already submitted
+        return redirect('dashboard:vendor_dashboard') # Redirect to the homepage if KYC already submitted
 
     if request.method == 'POST':
         form = KYCForm(request.POST, request.FILES)
@@ -25,7 +25,7 @@ def kyc_verification(request):
             kyc.status = 'pending'  # Set status to pending
             kyc.save()
             messages.success(request, "KYC submitted successfully. You can now access the platform.")
-            return redirect('vendor:vendor_dashboard')
+            return redirect('dashboard:vendor_dashboard')
     else:
         form = KYCForm()
 

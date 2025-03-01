@@ -12,5 +12,6 @@ urlpatterns = [
     path('vendor/add-product/',add_product, name='add_product'),
     path('vendor/edit-product/<int:product_id>/', edit_product, name='edit_product'),
     path('vendor/remove-product/<int:product_id>/', remove_product, name='remove_product'),
-    path('vendor/orders/', vendor_orders, name='vendor_orders'),
+    path('vendor/orders/',vendor_orders, name='vendor_orders'),
+    path('vendor/order/<int:order_id>/update/',vendor_order_update, name='vendor_order_update'),
 ]

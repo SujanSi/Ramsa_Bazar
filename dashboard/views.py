@@ -162,35 +162,44 @@ from shop.models import Order
 from django.http import HttpResponse
 import logging
 from django.core.paginator import Paginator
+from django.core.mail import send_mail
+
+
 logger = logging.getLogger(__name__)
 
 @login_required
 def vendor_orders(request):
     """
-    Display orders for products uploaded by the logged-in vendor
+    Display orders for products uploaded by the logged-in vendor.
     """
     if not hasattr(request.user, 'role') or request.user.role != 'vendor':
         logger.error(f"Non-vendor {request.user} attempted to access vendor orders")
         return HttpResponse("Unauthorized", status=403)
 
     try:
-        # Get all products uploaded by this vendor
+        # Check if user has role attribute
+        logger.info(f"User: {request.user}, Role: {getattr(request.user, 'role', 'None')}")
+
+        # Get vendor products
         vendor_products = Product.objects.filter(vendor=request.user)
-        
-        # Get all orders for these products (compatible with existing Order model)
+        logger.info(f"Found {vendor_products.count()} products for vendor {request.user}")
+
+        # Get orders
         orders = Order.objects.filter(
             product__in=vendor_products
         ).select_related(
             'user', 'product'
         ).order_by('-created_at')
+        logger.info(f"Found {orders.count()} orders")
 
-        # Status filter
+        # Apply status filter
         status_filter = request.GET.get('status', '')
         if status_filter:
             orders = orders.filter(status=status_filter)
+            logger.info(f"Filtered to {orders.count()} orders with status {status_filter}")
 
         # Pagination
-        paginator = Paginator(orders, 10)  # 10 orders per page
+        paginator = Paginator(orders, 10)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
 
@@ -201,10 +210,77 @@ def vendor_orders(request):
         }
         
         logger.info(f"Vendor {request.user} viewed their orders")
-        return render(request, 'shop/vendor_orders.html', context)
+        return render(request, 'dashboard/vendor_orders.html', context)
 
+    except Product.DoesNotExist:
+        logger.error(f"No products found for vendor {request.user}")
+        return render(request, 'dashboard/vendor_orders.html', {'error': 'No products found'})
+    except Order.DoesNotExist:
+        logger.error(f"No orders found for vendor {request.user}")
+        return render(request, 'dashboard/vendor_orders.html', {'error': 'No orders found'})
     except Exception as e:
-        logger.error(f"Error loading vendor orders for {request.user}: {str(e)}")
-        return render(request, 'shop/vendor_orders.html', {
-            'error': 'Unable to load orders at this time'
+        logger.error(f"Error loading vendor orders for {request.user}: {str(e)}", exc_info=True)
+        return render(request, 'dashboard/vendor_orders.html', {
+            'error': f'Unable to load orders at this time: {str(e)}'
+        })
+
+from django.conf import settings
+@login_required
+def vendor_order_update(request, order_id):
+    """
+    Update order status and notify customer via email
+    """
+    if not hasattr(request.user, 'role') or request.user.role != 'vendor':
+        logger.error(f"Non-vendor {request.user} attempted to access order update")
+        return HttpResponse("Unauthorized", status=403)
+
+    try:
+        order = Order.objects.get(
+            id=order_id,
+            product__vendor=request.user
+        )
+        
+        if request.method == "POST":
+            new_status = request.POST.get('status')
+            if new_status in dict(Order.STATUS_CHOICES):
+                old_status = order.status
+                order.status = new_status
+                order.save()
+
+                # Send email notification to customer
+                subject = f"Order #{order.id} Status Update"
+                message = f"""
+                Dear {order.user.full_name},
+
+                Your order id #{order.id} for {order.product.name} has been updated.
+                
+                Previous Status: {dict(Order.STATUS_CHOICES)[old_status]}
+                New Status: {dict(Order.STATUS_CHOICES)[new_status]}
+                
+                Thank you for shopping with us!
+                """
+                send_mail(
+                    subject,
+                    message,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [order.user.email],
+                    fail_silently=False,
+                )
+                
+                logger.info(f"Vendor {request.user} updated order {order.id} status to {new_status}")
+                return redirect('dashboard:vendor_orders')
+        
+        context = {
+            'order': order,
+            'status_choices': Order.STATUS_CHOICES,
+        }
+        return render(request, 'dashboard/vendor_order_update.html', context)
+
+    except Order.DoesNotExist:
+        logger.error(f"Order {order_id} not found or not owned by vendor {request.user}")
+        return HttpResponse("Order not found", status=404)
+    except Exception as e:
+        logger.error(f"Error updating order {order_id} for {request.user}: {str(e)}")
+        return render(request, 'dashboard/vendor_order_update.html', {
+            'error': 'Unable to update order at this time'
         })
