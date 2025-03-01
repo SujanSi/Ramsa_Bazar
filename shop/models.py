@@ -146,17 +146,25 @@ class Checkout(models.Model):
         return f"Order {self.id} by {self.user}"
 
 class Order(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
+    )
     Payment_Method = {
         ('Cash on Delevery', 'Cash on Delevery'),
         ('Khalti', 'Khalti'),
         
     }
-    product = models.CharField(max_length=255,db_index=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders', default=1)
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.PositiveIntegerField()
     total_price=models.DecimalField(max_digits=10, decimal_places=2)
     payment_method=models.CharField(max_length=255,db_index=True)
-    status=models.CharField(max_length=255,db_index=True)
+    status = models.CharField(max_length=255, choices=STATUS_CHOICES, default='pending', db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

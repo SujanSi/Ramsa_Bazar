@@ -281,12 +281,13 @@ def place_order(request):
                 with transaction.atomic():
                     for item in cart_items:
                         Order.objects.create(
-                            product=item.product.name,
+                            user=request.user,
+                            product=item.product,
                             price=item.product.price,
                             quantity=item.quantity,
                             total_price=item.product.price * item.quantity,
                             payment_method=payment_method,
-                            status="Pending",
+                            status="pending",
                         )
                     cart_items.delete()
                     logger.info("Cart cleared successfully.")
@@ -331,12 +332,13 @@ def khalti_verify(request):
                     with transaction.atomic():
                         for item in cart_items:
                             Order.objects.create(
-                                product=item['product_name'],
+                                user=request.user,
+                                product=item.product,
                                 price=Decimal(item['price']),
                                 quantity=item['quantity'],
                                 total_price=Decimal(item['total_price']),
                                 payment_method='khalti',
-                                status="Pending",
+                                status="pending",
                             )
                         # Clear cart (assuming cart_items.delete() clears the cart in DB)
                         CartItem.objects.filter(cart=get_cart(request.user)).delete()
@@ -368,3 +370,9 @@ def about(request):
 
 def contact(request):
     return render(request, 'contact.html')
+
+
+@login_required
+def order_list(request):
+    orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'shop/order_list.html', {'orders': orders})

@@ -13,7 +13,12 @@ from django.contrib.auth.tokens import default_token_generator
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from user.forms import KYCForm
+from django.urls import reverse
+from .models import CustomUser
 from user.models import KYCVerification
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
 
 
 # Create your views here.
@@ -135,7 +140,7 @@ def user_login(request):
             elif user.role == 'superadmin':
                 return redirect('admin:index')  # Redirect to superadmin dashboard
             else:
-                return redirect('vendor:home')
+                return redirect('shop:home')
 
         else:
             print(f"Invalid credentials for {email}")  # Debugging
@@ -224,3 +229,67 @@ def dashboard_redirect(request):
         return redirect('vendor:vendor_dashboard')  
     else:
         return redirect('customer:customer_dashboard')
+    
+
+
+# Forgot Password View
+def forgot_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        try:
+            user = CustomUser.objects.get(email=email)
+            # Generate token and UID
+            token_generator = PasswordResetTokenGenerator()
+            token = token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            # Create reset link
+            reset_link = request.build_absolute_uri(
+                reverse('core:reset_password', kwargs={'uidb64': uid, 'token': token})
+            )
+            # Send email
+            subject = "Password Reset Request"
+            message = f"Hi {user.full_name},\n\nClick the link below to reset your password:\n{reset_link}\n\nIf you didn’t request this, please ignore this email."
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+            messages.success(request, "A password reset link has been sent to your email.")
+            return redirect('core:check_mail')
+        except CustomUser.DoesNotExist:
+            messages.error(request, "No account found with this email address.")
+            return render(request, 'core/forgot_password.html')
+    return render(request, 'core/forgot_password.html')
+
+# Reset Password View
+def reset_password(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = CustomUser.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+        user = None
+
+    token_generator = PasswordResetTokenGenerator()
+    if user and token_generator.check_token(user, token):
+        if request.method == 'POST':
+            password = request.POST.get('password')
+            confirm_password = request.POST.get('confirm_password')
+            if password == confirm_password:
+                user.set_password(password)
+                user.save()
+                messages.success(request, "Your password has been reset successfully. Please log in.")
+                return redirect('core:login')
+            else:
+                messages.error(request, "Passwords do not match.")
+                return render(request, 'core/reset_password.html', {'uidb64': uidb64, 'token': token})
+        return render(request, 'core/reset_password.html', {'uidb64': uidb64, 'token': token})
+    else:
+        messages.error(request, "The reset link is invalid or has expired.")
+        return redirect('core:login')
+    
+
+
+def check_mail(request):
+    return render(request, 'core/check_email.html')

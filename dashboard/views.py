@@ -52,8 +52,14 @@ def change_password(request):
     return render(request, 'dashboard/change_password.html', {'form': form})
 
 
-
+@login_required
 def vendor_products(request):
+    # Check if user is a vendor and KYC verified
+    if request.user.role != 'vendor' or not request.user.kyc_verified:
+        return render(request, 'dashboard/access_denied.html', {
+            'message': 'Only KYC-verified vendors can access this section.'
+        })
+
     product_type = request.GET.get('type', 'selling')
     if product_type not in ['selling', 'auction', 'renting']:
         product_type = 'selling'
@@ -71,28 +77,47 @@ def vendor_products(request):
     return render(request, 'dashboard/vendor_products.html', context)
 
 
+@login_required
 def add_product(request):
+    # Check if user is a vendor and KYC verified
+    if request.user.role != 'vendor' or not request.user.kyc_verified:
+        return render(request, 'dashboard/access_denied.html', {
+            'message': 'Only KYC-verified vendors can add products.'
+        })
+
+    product_type = request.GET.get('type', 'selling')
+    print(f"Add Product - product_type: {product_type}")  # Debug
+    if product_type not in ['selling', 'auction', 'renting']:
+        product_type = 'selling'
+
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             product = form.save(commit=False)
-            product.vendor = request.user  # Set the current user as vendor
+            product.vendor = request.user
             product.save()
-            return redirect('dashboard:vendor_products')  # Redirect back to products page
+            return redirect(f"{reverse('dashboard:vendor_products')}?type={product_type}")
     else:
-        form = ProductForm(initial={'product_type': 'selling'})  # Default to 'selling'
+        form = ProductForm(initial={'product_type': product_type})
 
     context = {
         'form': form,
         'vendor': request.user,
+        'product_type': product_type,
     }
     return render(request, 'dashboard/add_product.html', context)
 
 
-
+@login_required
 def edit_product(request, product_id):
+    # Check if user is a vendor and KYC verified
+    if request.user.role != 'vendor' or not request.user.kyc_verified:
+        return render(request, 'dashboard/access_denied.html', {
+            'message': 'Only KYC-verified vendors can edit products.'
+        })
+
     product = get_object_or_404(Product, id=product_id, vendor=request.user)
-    product_type = request.GET.get('type', 'selling')  # Capture product_type from URL
+    product_type = request.GET.get('type', 'selling')
     if product_type not in ['selling', 'auction', 'renting']:
         product_type = 'selling'
 
@@ -108,20 +133,78 @@ def edit_product(request, product_id):
         'form': form,
         'vendor': request.user,
         'product': product,
-        'product_type': product_type,  # Pass to template
+        'product_type': product_type,
     }
     return render(request, 'dashboard/edit_product.html', context)
 
+
+@login_required
 def remove_product(request, product_id):
+    # Check if user is a vendor and KYC verified
+    if request.user.role != 'vendor' or not request.user.kyc_verified:
+        return render(request, 'dashboard/access_denied.html', {
+            'message': 'Only KYC-verified vendors can remove products.'
+        })
+
     product = get_object_or_404(Product, id=product_id, vendor=request.user)
-    product_type = request.GET.get('type', 'selling')  # Get the current product type
+    product_type = request.GET.get('type', 'selling')
     if product_type not in ['selling', 'auction', 'renting']:
-        product_type = 'selling'  # Fallback to 'selling' if invalid
+        product_type = 'selling'
 
     if request.method == 'POST':
         product.delete()
-        # Redirect to the same product type page using reverse
         return redirect(f"{reverse('dashboard:vendor_products')}?type={product_type}")
-    
-    # If not POST, redirect back to the same product type page
     return redirect(f"{reverse('dashboard:vendor_products')}?type={product_type}")
+
+
+
+from shop.models import Order
+from django.http import HttpResponse
+import logging
+from django.core.paginator import Paginator
+logger = logging.getLogger(__name__)
+
+@login_required
+def vendor_orders(request):
+    """
+    Display orders for products uploaded by the logged-in vendor
+    """
+    if not hasattr(request.user, 'role') or request.user.role != 'vendor':
+        logger.error(f"Non-vendor {request.user} attempted to access vendor orders")
+        return HttpResponse("Unauthorized", status=403)
+
+    try:
+        # Get all products uploaded by this vendor
+        vendor_products = Product.objects.filter(vendor=request.user)
+        
+        # Get all orders for these products (compatible with existing Order model)
+        orders = Order.objects.filter(
+            product__in=vendor_products
+        ).select_related(
+            'user', 'product'
+        ).order_by('-created_at')
+
+        # Status filter
+        status_filter = request.GET.get('status', '')
+        if status_filter:
+            orders = orders.filter(status=status_filter)
+
+        # Pagination
+        paginator = Paginator(orders, 10)  # 10 orders per page
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context = {
+            'page_obj': page_obj,
+            'status_choices': Order.STATUS_CHOICES,
+            'current_status': status_filter,
+        }
+        
+        logger.info(f"Vendor {request.user} viewed their orders")
+        return render(request, 'shop/vendor_orders.html', context)
+
+    except Exception as e:
+        logger.error(f"Error loading vendor orders for {request.user}: {str(e)}")
+        return render(request, 'shop/vendor_orders.html', {
+            'error': 'Unable to load orders at this time'
+        })

@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <link rel="shortcut icon" type="image/x-icon" href="{% static 'dashboard/assets/img/leaf.svg' %}">
-    <title>Avni - Bootstrap 5 Admin Template</title>
+    <title>RAMSA BAJAR</title>
     <link href="{% static 'dashboard/assets/css/bootstrap.css' %}" rel="stylesheet">
     <link href="{% static 'dashboard/assets/css/main.css' %}" rel="stylesheet">
 </head>
@@ -19,11 +19,11 @@
             <nav id="sidebar" class="active">
                 <div class="sidebar-header text-center">
                     <img src="{% static 'dashboard/assets/img/leaf.svg' %}" alt="logo" class="app-logo">
-                    <h4 class="sidebar-title theme-item">AVNI</h4>
+                    <h4 class="sidebar-title theme-item">RAMSA BAJAR</h4>
                 </div>
             
                 <ul class="list-unstyled components text-secondary">
-                    <li><a href="index.html"><i class="data-feather theme-item" data-feather="home"></i> <span
+                    <li><a href="{% url 'dashboard:vendor_dashboard' %}"><i class="data-feather theme-item" data-feather="home"></i> <span
                                 class="theme-item"> Dashboard</span></a></li>
                                 <li>
                                     <div class="sidebardropdown">
@@ -46,7 +46,7 @@
                                 class="theme-item">Notification</span></a></li>
                     <li><a href="charts.html"><i class="data-feather theme-item" data-feather="message-circle"></i> <span
                                 class="theme-item"> Message</span></a></li>
-                    <li><a href="animation.html"><i class="data-feather theme-item" data-feather="shopping-cart"></i> <span
+                    <li><a href="{% url 'dashboard:vendor_orders' %}"><i class="data-feather theme-item" data-feather="shopping-cart"></i> <span
                                 class="theme-item"> Order</span></a></li>
                 </ul>
             
@@ -62,7 +62,7 @@
                             <i data-feather="menu"></i> <span></span>
                         </button>
                         <img src="{% static 'dashboard/assets/img/leaf.svg' %}" alt="logo" class="app-logo theme-item mx-2 navbrandarea1">
-                        <h4 class="sidebar-title theme-item mt-2 navbrandarea2">AVNI</h4>
+                        <h4 class="sidebar-title theme-item mt-2 navbrandarea2">RAMSA BAJAR</h4>
                         <button class="navbar-toggler py-0" type="button" data-bs-toggle="collapse"
                             data-bs-target="#navbarsExample04" aria-controls="navbarsExample04" aria-expanded="false"
                             aria-label="Toggle navigation">
@@ -75,7 +75,7 @@
                                 <li class="nav-item">
                                     <div class="nav-dropdown">
                                         <a class="nav-item nav-link active text-secondary py-0" aria-current="page"
-                                            href="index.html"><i class="data-feather theme-item"
+                                         href="{% url 'dashboard:vendor_dashboard' %}"><i class="data-feather theme-item"
                                                 data-feather="home"></i> <span class="theme-item">Home </span></a>
                                     </div>
                                 </li>
