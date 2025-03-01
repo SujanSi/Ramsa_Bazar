@@ -1,7 +1,7 @@
 from django import forms
 from core.models import CustomUser
 from django.contrib.auth.forms import PasswordChangeForm as BasePasswordChangeForm
-
+from shop.models import Product
 
 class ProfileEditForm(forms.ModelForm):
     class Meta:
@@ -30,3 +30,17 @@ class CustomPasswordChangeForm(BasePasswordChangeForm):
             'class': 'form-control',
             'placeholder': 'Confirm new password',
         })
+
+class ProductForm(forms.ModelForm):
+    class Meta:
+        model = Product
+        fields = [
+            'name', 'description', 'additional_information', 'price', 'discount',
+            'availability', 'sku', 'size', 'image', 'features', 'categories',
+            'stock', 'brand', 'product_type'
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+            'additional_information': forms.Textarea(attrs={'rows': 3}),
+            'features': forms.Textarea(attrs={'rows': 3}),
+        }

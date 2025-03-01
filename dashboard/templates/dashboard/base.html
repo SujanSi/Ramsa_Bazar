@@ -33,11 +33,11 @@
                                                 id="sidenavicon" data-feather="chevron-up"></i></a>
                         
                                         <div class="dropdown-container">
-                                            <a href="#" class="text-center"><i class="data-feather theme-item"
+                                            <a href="{% url 'dashboard:vendor_products' %}?type=selling" class="text-center {% if product_type == 'selling' %}active{% endif %}"><i class="data-feather theme-item"
                                                     data-feather="dollar-sign"></i> <span class="data-feather theme-item">Selling</span></a> 
-                                            <a href="#" class="text-center"><i class="data-feather theme-item" data-feather="activity"></i> <span
+                                                    <a href="{% url 'dashboard:vendor_products' %}?type=auction" class="text-center {% if product_type == 'auction' %}active{% endif %}"><i class="data-feather theme-item" data-feather="activity"></i> <span
                                                     class="data-feather theme-item">Auction </span></a> 
-                                            <a href="#" class="text-center"><i class="data-feather theme-item" data-feather="calendar"></i> <span
+                                                    <a href="{% url 'dashboard:vendor_products' %}?type=renting" class="text-center {% if product_type == 'renting' %}active{% endif %}"><i class="data-feather theme-item" data-feather="calendar"></i> <span
                                                     class="data-feather theme-item"> Renting </span></a>
                                         </div>
                                     </div>
