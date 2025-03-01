@@ -15,5 +15,8 @@ urlpatterns = [
     path('order-confirmation/', order_confirmation, name='order_confirmation'),
     path('place-order/', place_order, name='place_order'),
     path('khalti_verify', khalti_verify, name='khalti_verify'),
+    path('contact/', contact, name='contact'),
+    path('about/', about, name='about'),
+
 
 ]
