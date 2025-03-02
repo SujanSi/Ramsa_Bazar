@@ -174,7 +174,7 @@
                             <button class="btn filter__btn filter__btn--style-1" 
                                     type="button" 
                                     data-filter=".{{ category.name|lower|slugify }}">
-                                {{ category.name|upper }}
+                                {{ category.name|upper|slice:":8" }}
                             </button>
                         </div>
                     {% endfor %}
@@ -188,7 +188,7 @@
                                 <div class="product-o product-o--hover-on product-o--radius">
                                     <div class="product-o__wrap">
                                         <a class="aspect aspect--bg-grey aspect--square u-d-block" 
-                                           href="#">
+                                           href="{% url 'shop:product_detail' product.id %}">
                                             <img class="aspect__img" 
                                                  src="{% if product.image and product.image.url %}{{ product.image.url }}{% else %}{% static 'images/product/electronic/product2.jpg' %}{% endif %}" 
                                                  alt="{{ product.name|default:'No name' }}">
@@ -196,12 +196,12 @@
                                         
                                     </div>
                                     <span class="product-o__category">
-                                        <a href="#">
+                                        <a href="{% url 'shop:product_detail' product.id %}">
                                             {% if product.categories %}{{ product.categories.name }}{% else %}Uncategorized{% endif %}
                                         </a>
                                     </span>
                                     <span class="product-o__name">
-                                        <a href="#">{{ product.name }}</a>
+                                        <a href="{% url 'shop:product_detail' product.id %}">{{ product.name|slice:":8" }}</a>
                                     </span>
                                     <div class="product-o__rating gl-rating-style">
                                         <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
@@ -382,15 +382,15 @@
                         <div class="u-s-m-b-30">
                             <div class="product-o product-o--hover-on">
                                 <div class="product-o__wrap">
-                                    <a class="aspect aspect--bg-grey aspect--square u-d-block" href="">
+                                    <a class="aspect aspect--bg-grey aspect--square u-d-block" href="{% url 'shop:product_detail' product.id %}">
                                         <img class="aspect__img" src="{{ product.image.url }}" alt="{{ product.name }}">
                                     </a>
                                 </div>
                                 <span class="product-o__category">
-                                    <a href="">{{ product.category.name }}</a>
+                                    <a href="{% url 'shop:product_detail' product.id %}">{{ product.category.name|slice:":8" }}</a>
                                 </span>
                                 <span class="product-o__name">
-                                    <a href="">{{ product.name }}</a>
+                                    <a href="{% url 'shop:product_detail' product.id %}">{{ product.name|slice:":8" }}</a>
                                 </span>
                                 <div class="product-o__rating gl-rating-style">
                                     {% for _ in "12345"|make_list %}
@@ -403,6 +403,7 @@
                                         <span class="product-o__discount">${{ product.discount_price }}</span>
                                     {% endif %}
                                 </span>
+                                <a href="{% url 'shop:product_detail' product.id %}" style="background-color:rgb(221, 84, 42); color: white; padding: 12px 24px; font-size: 18px; border-radius: 5px; text-decoration: none; display: inline-block;">View Product</a>
                             </div>
                         </div>
                         {% endfor %}
@@ -485,10 +486,10 @@
                                     </a>
                                 </div>
                                 <span class="product-o__category">
-                                    <a href="">{{ product.category.name }}</a>
+                                    <a href="{% url 'shop:product_detail' product.id %}">{{ product.category.name|slice:":8" }}</a>
                                 </span>
                                 <span class="product-o__name">
-                                    <a href="">{{ product.name }}</a>
+                                    <a href="{% url 'shop:product_detail' product.id %}">{{ product.name|slice:":8" }}</a>
                                 </span>
                                 <span class="product-o__price">
                                     ${{ product.price }}
@@ -496,6 +497,7 @@
                                         <span class="product-o__discount">${{ product.discount_price }}</span>
                                     {% endif %}
                                 </span>
+                                <a href="{% url 'shop:product_detail' product.id %}" style="background-color:rgb(221, 84, 42); color: white; padding: 12px 24px; font-size: 18px; border-radius: 5px; text-decoration: none; display: inline-block;">View Product</a>
                             </div>
                         </div>
                     {% endfor %}

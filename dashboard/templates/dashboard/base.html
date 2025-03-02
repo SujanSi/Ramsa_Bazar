@@ -18,8 +18,10 @@
 
             <nav id="sidebar" class="active">
                 <div class="sidebar-header text-center">
-                    <img src="{% static 'dashboard/assets/img/leaf.svg' %}" alt="logo" class="app-logo">
-                    <h4 class="sidebar-title theme-item">RAMSA BAJAR</h4>
+                    <a href="{% url 'dashboard:vendor_dashboard' %}">
+                        <img src="{% static 'dashboard/assets/img/leaf.svg' %}" alt="logo" class="app-logo">
+                        <h4 class="sidebar-title theme-item">RAMSA BAJAR</h4>
+                    </a>
                 </div>
             
                 <ul class="list-unstyled components text-secondary">
@@ -42,9 +44,9 @@
                                         </div>
                                     </div>
                                 </li>
-                    <li><a href="form.html"><i class="data-feather theme-item" data-feather="bell"></i> <span
+                    <li><a href="{% url 'dashboard:notification' %}"><i class="data-feather theme-item" data-feather="bell"></i> <span
                                 class="theme-item">Notification</span></a></li>
-                    <li><a href="charts.html"><i class="data-feather theme-item" data-feather="message-circle"></i> <span
+                    <li><a href="{% url 'dashboard:message' %}"><i class="data-feather theme-item" data-feather="message-circle"></i> <span
                                 class="theme-item"> Message</span></a></li>
                     <li><a href="{% url 'dashboard:vendor_orders' %}"><i class="data-feather theme-item" data-feather="shopping-cart"></i> <span
                                 class="theme-item"> Order</span></a></li>

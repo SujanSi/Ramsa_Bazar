@@ -22,7 +22,7 @@
                         <div class="pd-breadcrumb u-s-m-b-30">
                             <ul class="pd-breadcrumb__list">
                                 <li class="has-separator">
-                                    <a href="#">Home</a>
+                                    <a href="{% url 'shop:home' %}">Home</a>
                                 </li>
                                 <li class="has-separator">
                                     <a href="#">{% if product.categories %}{{ product.categories.name }}{% else %}Uncategorized{% endif %}</a>
