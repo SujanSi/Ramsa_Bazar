@@ -24,12 +24,20 @@
         font-weight: 600;
         text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         margin-bottom: 2rem;
+        margin-left: 283px;
+
     }
 
     .order-table {
         background: #334155;
         border-radius: 15px;
         overflow: hidden;
+        width: 80%;
+        max-width: 900px; 
+        margin: 0 auto;
+        align-items: center;
+        padding: 20px;
+        
     }
 
     .table-header {
@@ -135,22 +143,21 @@
             <table class="order-table table">
                 <thead class="table-header">
                     <tr>
-                        <th>Order #</th>
+                        <th>Order No.</th>
                         <th>Product</th>
                         <th>Quantity</th>
                         <th>Total</th>
                         <th>Status</th>
                         <th>Date</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for order in orders %}
                         <tr class="table-row">
-                            <td data-label="Order #">#{{ order.id }}</td>
+                            <td data-label="Order No.">{{ order.id }}</td>
                             <td data-label="Product">{{ order.product }}</td>
                             <td data-label="Quantity">{{ order.quantity }}</td>
-                            <td data-label="Total">${{ order.total_price }}</td>
+                            <td data-label="Total">रु {{ order.total_price }}</td>
                             <td data-label="Status">
                                 <span class="status-badge 
                                     {% if order.status == 'pending' %}badge-pending
@@ -160,11 +167,6 @@
                                 </span>
                             </td>
                             <td data-label="Date">{{ order.created_at|date:"M d, Y" }}</td>
-                            <td data-label="Actions">
-                                <button class="detail-btn btn btn-sm rounded-pill">
-                                    <i class="fas fa-external-link-alt me-2"></i>Details
-                                </button>
-                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
