@@ -84,10 +84,10 @@ class ProductForm(forms.ModelForm):
                 'rows': 2,
                 'placeholder': 'Warranty info, care instructions...'
             }),
-            'features': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Key features & benefits...'
+            'features': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'role': 'switch',
+                'type': 'checkbox',
             }),
 
             # Select Boxes
@@ -114,14 +114,12 @@ class ProductForm(forms.ModelForm):
             }),
 
             # Checkbox
-            'availability': forms.CheckboxInput(attrs={
+           'availability': forms.CheckboxInput(attrs={
                 'class': 'form-check-input',
-                'role': 'switch'
-            })
+                'role': 'switch',
+                'type': 'checkbox'
+            }),
         }
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Add empty labels for select fields
-        self.fields['brand'].empty_label = '-- Select Brand --'
-        self.fields['product_type'].empty_label = '-- Select Type --'
+        def clean_availability(self):
+         return self.cleaned_data.get('availability', False) 

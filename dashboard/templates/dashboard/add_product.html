@@ -138,13 +138,17 @@
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="id_features" class="form-label">Key Features</label>
-                            <textarea name="features" id="id_features" 
-                                    class="form-control {% if form.features.errors %}is-invalid{% endif %}"
-                                    rows="2">{{ form.features.value|default:'' }}</textarea>
+                            <div class="form-check">
+                                <input type="checkbox" name="features" id="id_features" 
+                                       class="form-check-input {% if form.features.errors %}is-invalid{% endif %}"
+                                       {% if form.features.value %}checked{% endif %}>
+                                <label class="form-check-label" for="id_features">Select if this product has key features</label>
+                            </div>
                             {% for error in form.features.errors %}
                                 <div class="invalid-feedback">{{ error }}</div>
                             {% endfor %}
                         </div>
+                        
                     </div>
                 </div>
 
@@ -171,7 +175,6 @@
                             <label for="id_brand" class="form-label">Brand</label>
                             <select name="brand" id="id_brand" 
                                    class="form-select {% if form.brand.errors %}is-invalid{% endif %}">
-                                <option value="">-- Select Brand --</option>
                                 {% for value, text in form.brand.field.choices %}
                                     <option value="{{ value }}" {% if value == form.brand.value %}selected{% endif %}>{{ text }}</option>
                                 {% endfor %}

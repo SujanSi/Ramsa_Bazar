@@ -62,7 +62,7 @@ class Product(models.Model):
     additional_information = models.CharField(max_length=255,null=True, blank=True,db_index=True)
     price = models.DecimalField(max_digits=10, decimal_places=2,null=False, blank=False,verbose_name="Product Price",db_index=True)
     discount=models.DecimalField(decimal_places=3, max_digits=10,null=True, blank=True,db_index=True)
-    availability = models.IntegerField(null=True, blank=True,db_index=True)
+    availability = models.BooleanField(default=False)
     sku = models.CharField(max_length=100,null=True, blank=True,db_index=True)
     size=models.ForeignKey(Size, on_delete=models.CASCADE,null=True, blank=True,db_index=True)
     image = models.ImageField(upload_to='products/',null=True, blank=True,db_index=True)

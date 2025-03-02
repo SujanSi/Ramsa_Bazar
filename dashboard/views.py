@@ -95,8 +95,12 @@ def add_product(request):
         if form.is_valid():
             product = form.save(commit=False)
             product.vendor = request.user
+            product.product_type = product_type  # Set the product_type correctly
             product.save()
             return redirect(f"{reverse('dashboard:vendor_products')}?type={product_type}")
+        else:
+            # Print form errors for debugging
+            print(form.errors)
     else:
         form = ProductForm(initial={'product_type': product_type})
 
@@ -106,6 +110,7 @@ def add_product(request):
         'product_type': product_type,
     }
     return render(request, 'dashboard/add_product.html', context)
+
 
 
 @login_required
