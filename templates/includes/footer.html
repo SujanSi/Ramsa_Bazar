@@ -19,21 +19,37 @@
                                 <div class="outer-footer__social">
                                     <ul>
                                         <li>
-
-                                            <a class="s-fb--color-hover" href="#"><i class="fab fa-facebook-f"></i></a></li>
+                                            <a class="s-fb--color-hover" href="https://www.facebook.com/" target="_blank">
+                                                <i class="fab fa-facebook-f"></i>
+                                            </a>
+                                        </li>
                                         <li>
-
-                                            <a class="s-tw--color-hover" href="#"><i class="fab fa-twitter"></i></a></li>
+                                            <a class="s-tw--color-hover" href="https://twitter.com/" target="_blank">
+                                                <i class="fab fa-twitter"></i>
+                                            </a>
+                                        </li>
                                         <li>
-
-                                            <a class="s-youtube--color-hover" href="#"><i class="fab fa-youtube"></i></a></li>
+                                            <a class="s-youtube--color-hover" href="https://www.youtube.com/channel/" target="_blank">
+                                                <i class="fab fa-youtube"></i>
+                                            </a>
+                                        </li>
                                         <li>
-
-                                            <a class="s-insta--color-hover" href="#"><i class="fab fa-instagram"></i></a></li>
+                                            <a class="s-insta--color-hover" href="https://www.instagram.com/" target="_blank">
+                                                <i class="fab fa-instagram"></i>
+                                            </a>
+                                        </li>
                                         <li>
-
-                                            <a class="s-gplus--color-hover" href="#"><i class="fab fa-google-plus-g"></i></a></li>
+                                            <a class="s-linkedin--color-hover" href="https://www.linkedin.com/in/" target="_blank">
+                                                <i class="fab fa-linkedin-in"></i>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="s-tiktok--color-hover" href="https://www.tiktok.com/" target="_blank">
+                                                <i class="fab fa-tiktok"></i>
+                                            </a>
+                                        </li>
                                     </ul>
+                                    
                                 </div>
                             </div>
                         </div>
@@ -47,19 +63,10 @@
                                             <ul>
                                                 <li>
 
-                                                    <a href="cart.html">Cart</a></li>
+                                                    <a href="{% url 'shop:cart' %}">Cart</a></li>
                                                 <li>
 
-                                                    <a href="dashboard.html">Account</a></li>
-                                                <li>
-
-                                                    <a href="shop-side-version-2.html">Manufacturer</a></li>
-                                                <li>
-
-                                                    <a href="dash-payment-option.html">Finance</a></li>
-                                                <li>
-
-                                                    <a href="shop-side-version-2.html">Shop</a></li>
+                                                    <a href="{% url 'shop:home' %}">Shop</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -72,19 +79,10 @@
                                             <ul>
                                                 <li>
 
-                                                    <a href="about.html">About us</a></li>
+                                                    <a href="{% url 'shop:about' %}">About us</a></li>
                                                 <li>
 
-                                                    <a href="contact.html">Contact Us</a></li>
-                                                <li>
-
-                                                    <a href="index.html">Sitemap</a></li>
-                                                <li>
-
-                                                    <a href="dash-my-order.html">Delivery</a></li>
-                                                <li>
-
-                                                    <a href="shop-side-version-2.html">Store</a></li>
+                                                    <a href="{% url 'shop:contact' %}">Contact Us</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -95,7 +93,7 @@
                             <div class="outer-footer__content">
 
                                 <span class="outer-footer__content-title">About Us</span>
-                                <span class="newsletter__text">Subscribe to the mailing list to receive updates on promotions, new arrivals, discount and coupons.</span>
+                                <span class="newsletter__text">Learn more about us, our mission, values, and how we bring you the best products and services.</span>
                             </div>
                         </div>
                     </div>
@@ -108,9 +106,9 @@
                             <div class="lower-footer__content">
                                 <div class="lower-footer__copyright">
 
-                                    <span>Copyright © 2018</span>
+                                    <span>Copyright © 2025</span>
 
-                                    <a href="index.html">Reshop</a>
+                                    <a href="index.html">Ramsa Shop</a>
 
                                     <span>All Right Reserved</span></div>
                                 <div class="lower-footer__payment">

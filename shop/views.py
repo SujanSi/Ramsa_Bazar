@@ -2,24 +2,35 @@ from django.shortcuts import render,get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from .models import *
-import random
-
+from datetime import timedelta
+from django.utils import timezone
+from django.contrib import messages
+from .forms import *
 
 # Create your views here.
+now = timezone.now()
+
 def home(request):
     categories = Category.objects.all().order_by('name')
 
+    # Get products added in the last 30 days
+    time_threshold = now - timedelta(days=30)
+    new_arrival = Product.objects.filter(created_at__gte=time_threshold)
+
     # Get only selling products
     selling_products = Product.objects.filter(product_type='selling')
+    initial_products = selling_products[:5]
     
-    # Select a random product for initial display (optional)
-    initial_products = selling_products[:8]
-
+    featured_products = Product.objects.filter(features=True)[:5]
+    brand=Brand.objects.all() 
 
     context = {
         'categories': categories,
         'selling_products': selling_products,
         'initial_products': initial_products,
+        'new_arrival': new_arrival,
+        'featured_products': featured_products,
+        'brand': brand,
     }
 
     return render(request, "home.html", context)
@@ -369,7 +380,14 @@ def about(request):
     return render(request, 'about.html')
 
 def contact(request):
-    return render(request, 'contact.html')
+     form = ContactForm()
+     if request.method == "POST":
+            form = ContactForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Your message has been sent successfully!")
+                return redirect("shop:home")  
+     return render(request, 'contact.html',{"form": form})
 
 
 @login_required

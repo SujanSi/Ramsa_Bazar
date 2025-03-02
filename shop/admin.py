@@ -34,3 +34,7 @@ class CheckoutAdmin(admin.ModelAdmin):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display=('product','price','quantity','total_price','payment_method','status',)
+    
+@admin.register(Contact)
+class ContactAdmin(admin.ModelAdmin):
+    list_display=('name','email','subject','message','created_at')

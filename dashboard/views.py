@@ -285,5 +285,3 @@ def vendor_order_update(request, order_id):
             'error': 'Unable to update order at this time'
         })
         
-def form(request):
-    return render(request, 'dashboard/form.html')

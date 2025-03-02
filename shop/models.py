@@ -66,7 +66,7 @@ class Product(models.Model):
     sku = models.CharField(max_length=100,null=True, blank=True,db_index=True)
     size=models.ForeignKey(Size, on_delete=models.CASCADE,null=True, blank=True,db_index=True)
     image = models.ImageField(upload_to='products/',null=True, blank=True,db_index=True)
-    features = models.CharField(max_length=255,null=True, blank=True,db_index=True)
+    features = models.BooleanField(default=False, db_index=True)
     categories = models.ForeignKey(Category, on_delete=models.CASCADE,null=True, blank=True,db_index=True)
     stock=models.IntegerField(null=True, blank=True,db_index=True)
     brand = models.ForeignKey('Brand', on_delete=models.CASCADE, null=True, blank=True,db_index=True)
@@ -174,3 +174,13 @@ class Order(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product}"
+    
+class Contact(models.Model):
+    name = models.CharField(max_length=255)
+    email = models.EmailField()
+    subject = models.CharField(max_length=255)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.subject}"
