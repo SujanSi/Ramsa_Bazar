@@ -135,13 +135,13 @@
                                     {% csrf_token %}
                                     <div class="pd-detail-inline-2">
                                         <div class="u-s-m-b-15">
-                                            <!--====== Input Counter ======-->
+                                            <!--====== Input Counters ======-->
                                             <div class="input-counter">
                                                 <span class="input-counter__minus fas fa-minus"></span>
                                                 <input class="input-counter__text input-counter--text-primary-style" type="text" name="quantity" value="1" data-min="1" data-max="{{ product.stock }}">
                                                 <span class="input-counter__plus fas fa-plus"></span>
                                             </div>
-                                            <!--====== End - Input Counter ======-->
+                                            <!--====== End - Input Counters ======-->
                                         </div>
                                         <div class="u-s-m-b-15">
                                             {% if request.user.is_authenticated %}
