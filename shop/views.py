@@ -276,6 +276,7 @@ def place_order(request):
         request.session['grand_total'] = float(grand_total)
         request.session['cart_items'] = [
             {
+                'product_id': item.product.id,
                 'product_name': item.product.name,
                 'price': float(item.product.price),
                 'quantity': item.quantity,
@@ -304,7 +305,7 @@ def place_order(request):
             }
 
             headers = {
-                'Authorization': 'Key 133eff2bf18d4888a8e0e699ede0f774',  # Replace with your Khalti secret key
+                'Authorization': 'Key 28808af5b2f74228b7da6ba0a27b1e7e',  # Replace with your Khalti secret key
                 'Content-Type': 'application/json',
             }
 
@@ -365,7 +366,7 @@ def khalti_verify(request):
 
         # Verify payment with Khalti
         headers = {
-            'Authorization': 'Key 133eff2bf18d4888a8e0e699ede0f774',  # Replace with your Khalti secret key
+            'Authorization': 'Key 28808af5b2f74228b7da6ba0a27b1e7e',  # Replace with your Khalti secret key
             'Content-Type': 'application/json',
         }
         url = "https://a.khalti.com/api/v2/epayment/lookup/"
@@ -382,9 +383,10 @@ def khalti_verify(request):
                 try:
                     with transaction.atomic():
                         for item in cart_items:
+                            product = Product.objects.get(id=item['product_id'])  # Fetch product using ID
                             Order.objects.create(
                                 user=request.user,
-                                product=item.product,
+                                product=product,
                                 price=Decimal(item['price']),
                                 quantity=item['quantity'],
                                 total_price=Decimal(item['total_price']),
@@ -399,10 +401,8 @@ def khalti_verify(request):
                         del request.session['cart_items']
                         del request.session['grand_total']
 
-                    return render(request, 'shop/checkout.html', {
-                        'message': 'Order has been placed successfully via Khalti!',
-                        'grand_total': grand_total,
-                    })
+                    messages.success(request, 'Order has been placed successfully via Khalti!')
+                    return redirect('shop:cart')
                 except Exception as e:
                     logger.error(f"Failed to create orders after Khalti payment: {str(e)}")
                     return redirect('shop:order_confirmation')

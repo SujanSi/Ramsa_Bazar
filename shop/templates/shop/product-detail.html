@@ -133,19 +133,25 @@
                             <div class="u-s-m-b-15">
                                 <form class="pd-detail__form" method="POST" action="{% url 'shop:add_to_cart' product.id %}">
                                     {% csrf_token %}
-                                    <div class="pd-detail-inline-2">
-                                        <div class="u-s-m-b-15">
-                                            <!--====== Input Counters ======-->
-                                            <div class="input-counter">
-                                                <span class="input-counter__minus fas fa-minus"></span>
-                                                <input class="input-counter__text input-counter--text-primary-style" type="text" name="quantity" value="1" data-min="1" data-max="{{ product.stock }}">
-                                                <span class="input-counter__plus fas fa-plus"></span>
+                                        <div class="pd-detail-inline-2">
+                                            <div class="u-s-m-b-15">
+                                                <!-- Quantity Counter -->
+                                                <div class="quantity-wrapper">
+                                                    <span class="quantity-decrease fas fa-minus"></span>
+                                                    <input class="quantity-value" 
+                                                        type="text" 
+                                                        name="quantity" 
+                                                        value="1" 
+                                                        data-min="1" 
+                                                        data-max="{{ product.stock }}">
+                                                    <span class="quantity-increase fas fa-plus"></span>
                                             </div>
                                             <!--====== End - Input Counters ======-->
                                         </div>
+                                        
                                         <div class="u-s-m-b-15">
                                             {% if request.user.is_authenticated %}
-                                                <button class="btn btn--e-brand-b-2" type="submit">Add to Cart</button>
+                                                <button class="btn btn--e-brand-b-2" type="submit" style="background-color:rgb(232, 105, 14); ">Add to Cart</button>
                                             {% else %}
                                                 <a href="{% url 'core:login' %}" class="btn btn--e-brand-b-2">Login to Add to Cart</a>
                                             {% endif %}
@@ -555,5 +561,106 @@
                     </div>
                 </div>
                 <!--====== End - Product Detail Tab ======-->
+<!-- Embedded CSS -->
+<style>
+    .quantity-wrapper {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .quantity-decrease, .quantity-increase {
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f5f5f5;
+        color: #333;
+        font-size: 14px;
+        transition: background-color 0.2s;
+    }
+    .quantity-decrease:hover, .quantity-increase:hover {
+        background-color: #e0e0e0;
+    }
+    .quantity-value {
+        width: 50px;
+        height: 30px;
+        text-align: center;
+        border: none;
+        border-left: 1px solid #ddd;
+        border-right: 1px solid #ddd;
+        padding: 0;
+        margin: 0;
+        font-size: 14px;
+        outline: none;
+    }
+    .u-s-m-b-15 {
+        margin-bottom: 15px;
+    }
+</style>
+
+<!-- Embedded JavaScript -->
+<script>
+    (function ($) {
+        // Quantity Counter Object
+        var QuantityControl = {};
+
+        // Initialize the counter
+        QuantityControl.init = function () {
+            var $quantityWrappers = $('.quantity-wrapper');
+
+            // Debug: Check if elements are found
+            console.log('Quantity wrappers found:', $quantityWrappers.length);
+            if ($quantityWrappers.length === 0) {
+                console.error('No elements with class "quantity-wrapper" found.');
+                return;
+            }
+
+            // Increment button
+            $quantityWrappers.find('.quantity-increase').on('click', function (e) {
+                e.preventDefault();
+                console.log('Increase button clicked');
+                var $input = $(this).siblings('.quantity-value');
+                var currentVal = parseInt($input.val()) || 0;
+                var maxVal = parseInt($input.data('max')) || Infinity;
+                var newVal = Math.min(currentVal + 1, maxVal);
+                $input.val(newVal).trigger('change');
+            });
+
+            // Decrement button
+            $quantityWrappers.find('.quantity-decrease').on('click', function (e) {
+                e.preventDefault();
+                console.log('Decrease button clicked');
+                var $input = $(this).siblings('.quantity-value');
+                var currentVal = parseInt($input.val()) || 0;
+                var minVal = parseInt($(this).siblings('.quantity-value').data('min')) || 1;
+                var newVal = Math.max(currentVal - 1, minVal);
+                $input.val(newVal).trigger('change');
+            });
+
+            // Handle manual input changes
+            $quantityWrappers.find('.quantity-value').on('change', function () {
+                var $this = $(this);
+                var minVal = parseInt($this.data('min')) || 1;
+                var maxVal = parseInt($this.data('max')) || Infinity;
+                var val = parseInt($this.val()) || minVal;
+
+                console.log('Value changed - Min:', minVal, 'Max:', maxVal, 'New Value:', val);
+                val = Math.max(minVal, Math.min(maxVal, val));
+                $this.val(val);
+            });
+        };
+
+        // Run when DOM is ready
+        $(document).ready(function () {
+            console.log('DOM ready - Initializing quantity counter');
+            QuantityControl.init();
+        });
+
+    })(jQuery);
+</script>
 </body>
 {% endblock container %}
