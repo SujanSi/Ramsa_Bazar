@@ -6,6 +6,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.contrib import messages
 from .forms import *
+from django.db.models import Q
 
 # Create your views here.
 now = timezone.now()
@@ -34,6 +35,45 @@ def home(request):
     }
 
     return render(request, "home.html", context)
+
+def search_view(request):
+    query = request.POST.get('query', '') if request.method == 'POST' else request.GET.get('query', '')
+    category_id = request.POST.get('category_id', '') if request.method == 'POST' else request.GET.get('category_id', '')
+    
+    products = Product.objects.all().select_related('categories')  # Optimize query with select_related
+    
+    if query:
+        products = products.filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query) |
+            Q(additional_information__icontains=query) |
+            Q(categories__name__icontains=query)
+        )
+    
+    category = None
+    if category_id:
+        products = products.filter(categories__id=category_id)
+        category = get_object_or_404(Category, id=category_id)
+    
+    # Group products by category
+    products_by_category = {}
+    for product in products:
+        category_name = product.categories.name if product.categories else "Uncategorized"
+        if category_name not in products_by_category:
+            products_by_category[category_name] = []
+        products_by_category[category_name].append(product)
+    
+    categories = Category.objects.all()
+    
+    context = {
+        'products_by_category': products_by_category,  # Dictionary of category: products
+        'query': query,
+        'category_id': category_id,
+        'categories': categories,
+        'category': category,
+    }
+    return render(request, 'shop/search.html', context)
+
 
 
 def product_detail(request, product_id):
@@ -395,5 +435,3 @@ def order_list(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'shop/order_list.html', {'orders': orders})
 
-def search_view(request):
-    return render(request, 'shop/search.html')

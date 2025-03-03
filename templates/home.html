@@ -383,7 +383,11 @@
                             <div class="product-o product-o--hover-on">
                                 <div class="product-o__wrap">
                                     <a class="aspect aspect--bg-grey aspect--square u-d-block" href="{% url 'shop:product_detail' product.id %}">
-                                        <img class="aspect__img" src="{{ product.image.url }}" alt="{{ product.name }}">
+                                        {% if product.image %}
+                                            <img class="aspect__img" src="{{ product.image.url }}" alt="{{ product.name }}">
+                                        {% else %}
+                                            <img class="aspect__img" src="{% static 'images/default-image.jpg' %}" alt="No Image Available">
+                                        {% endif %}
                                     </a>
                                 </div>
                                 <span class="product-o__category">
