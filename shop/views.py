@@ -384,6 +384,7 @@ def place_order(request):
     logger.warning("Non-POST request to place_order, redirecting to cart.")
     return redirect('shop:cart')
 
+from django.core.mail import send_mail
 @login_required
 def khalti_verify(request):
     if request.method == 'GET':
@@ -407,6 +408,7 @@ def khalti_verify(request):
                 # Payment successful, create orders
                 cart_items = request.session.get('cart_items', [])
                 grand_total = Decimal(request.session.get('grand_total', 0))
+                order_list = []
 
                 try:
                     with transaction.atomic():
@@ -421,6 +423,7 @@ def khalti_verify(request):
                                 payment_method='khalti',
                                 status="pending",
                             )
+                            order_list.append(f"- {product.name} x {item['quantity']} (${item['total_price']})")
                         # Clear cart (assuming cart_items.delete() clears the cart in DB)
                         CartItem.objects.filter(cart=get_cart(request.user)).delete()
                         logger.info("Cart cleared successfully after Khalti payment.")
@@ -428,6 +431,38 @@ def khalti_verify(request):
                         # Clean up session
                         del request.session['cart_items']
                         del request.session['grand_total']
+
+
+                        # **Send Order Confirmation Email**
+                    # Send Order Confirmation Email
+                    user_email = request.user.email
+                    if not user_email:
+                        logger.error("User email is not set.")
+                        messages.warning(request, "Order placed, but email confirmation failed due to missing email.")
+                    else:
+                        total_paid = round(grand_total, 2)
+                        subject = "Order Confirmation - Payment Successful"
+                        message = f"""
+                        Dear {request.user.full_name},
+
+                        Your payment via Khalti was successful!
+
+                        **Order Details:**
+                        {chr(10).join(order_list)}
+
+                        **Total Paid:** ${total_paid}
+
+                        Your order is now being processed. Thank you for shopping with us!
+
+                        Regards, 
+                        Your Store Team
+                        """
+                        try:
+                            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user_email], fail_silently=False)
+                            logger.info(f"Order confirmation email sent to {user_email}")
+                        except Exception as e:
+                            logger.error(f"Failed to send email: {str(e)}")
+                            messages.warning(request, "Order placed, but email confirmation failed.")
 
                     messages.success(request, 'Order has been placed successfully via Khalti!')
                     return redirect('shop:order_list')

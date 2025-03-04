@@ -51,6 +51,7 @@
                                         <th>Total Price</th>
                                         <th>Status</th>
                                         <th>Ordered On</th>
+                                        <th>Payment Method</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -69,6 +70,7 @@
                                             </span>
                                         </td>
                                         <td>{{ order.created_at|date:"M d, Y H:i" }}</td>
+                                        <td>{{ order.payment_method }}</td>
                                         <td>
                                             <a href="{% url 'dashboard:vendor_order_update' order.id %}" 
                                                class="btn btn-sm btn-primary">
