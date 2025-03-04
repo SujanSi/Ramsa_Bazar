@@ -9,7 +9,7 @@
                 <div class="shop-p">
                     <div class="shop-p__toolbar u-s-m-b-30">
                         <div class="shop-p__meta-wrap u-s-m-b-60">
-                            <span class="shop-p__meta-text-1">FOUND {{ products|length }} RESULTS</span>
+                            <span class="shop-p__meta-text-1">FOUND {{ products|length }} RESULTSs</span>
                         </div>
                         <div class="shop-p__tool-style">
                             <div class="tool-style__group u-s-m-b-8">
@@ -17,28 +17,7 @@
                                 <span class="js-shop-grid-target is-active">Grid</span>
                                 <span class="js-shop-list-target">List</span>
                             </div>
-                            <form>
-                                <div class="tool-style__form-wrap">
-                                    <div class="u-s-m-b-8">
-                                        <select class="select-box select-box--transparent-b-2">
-                                            <option>Show: 8</option>
-                                            <option selected>Show: 12</option>
-                                            <option>Show: 16</option>
-                                            <option>Show: 28</option>
-                                        </select>
-                                    </div>
-                                    <div class="u-s-m-b-8">
-                                        <select class="select-box select-box--transparent-b-2">
-                                            <option selected>Sort By: Newest Items</option>
-                                            <option>Sort By: Latest Items</option>
-                                            <option>Sort By: Best Selling</option>
-                                            <option>Sort By: Best Rating</option>
-                                            <option>Sort By: Lowest Price</option>
-                                            <option>Sort By: Highest Price</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </form>
+                            
                         </div>
                     </div>
                     
@@ -50,11 +29,12 @@
                                         <div class="product-m">
                                             <div class="product-m__thumb">
                                                 <a class="aspect aspect--bg-grey aspect--square u-d-block" href="{% url 'shop:product_detail' product_id=product.id %}">
-                                                    <img class="aspect__img" src="{{ product.image.url }}" alt="{{ product.name }}">
+                                                    {% if product.image %}
+                                                <img class="aspect__img" src="{{ product.image.url }}" alt="{{ product.name }}">
+                                                    {% else %}
+                                                        <img class="aspect__img" src="{% static 'images/default-image.jpg' %}" alt="No Image Available">
+                                                    {% endif %}
                                                 </a>
-                                                <div class="product-m__quick-look">
-                                                    <a class="fas fa-search" data-modal="modal" data-modal-id="#quick-look" data-tooltip="tooltip" data-placement="top" title="Quick Look"></a>
-                                                </div>
                                                 <div class="product-m__add-cart">
                                                     <form method="POST" action="{% url 'shop:add_to_cart' product.id %}">
                                                         {% csrf_token %}
@@ -72,7 +52,7 @@
                                                     <a href="#">{{ product.category }}</a>
                                                 </div>
                                                 <div class="product-m__name">
-                                                    <a href="{% url 'shop:product_detail' product_id=product.id %}">{{ product.name }}</a>
+                                                    <a href="{% url 'shop:product_detail' product_id=product.id %}">{{ product.name|truncatechars:14 }}</a>
                                                 </div>
                                                 <div class="product-m__rating gl-rating-style">
                                                     <i class="fas fa-star"></i>

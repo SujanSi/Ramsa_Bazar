@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.contrib import messages
 from .forms import *
 from django.db.models import Q
+from django.db.models import Count
 
 # Create your views here.
 now = timezone.now()
@@ -25,6 +26,9 @@ def home(request):
     featured_products = Product.objects.filter(features=True)[:5]
     brand=Brand.objects.all() 
 
+    products_with_comment_count = Product.objects.annotate(comment_count=Count('reviews'))
+
+
     context = {
         'categories': categories,
         'selling_products': selling_products,
@@ -32,6 +36,7 @@ def home(request):
         'new_arrival': new_arrival,
         'featured_products': featured_products,
         'brand': brand,
+        'products_with_comment_count': products_with_comment_count,
     }
 
     return render(request, "home.html", context)
@@ -78,7 +83,24 @@ def search_view(request):
 
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    return render(request, 'shop/product-detail.html', {'product': product})
+    reviews = Reviews.objects.filter(product=product).order_by('-created_at')
+
+    if request.method == 'POST':
+        form = ReviewForm(request.POST)
+        if form.is_valid():
+            # Save the new review
+            review = form.save(commit=False)
+            review.product = product  # Associate the review with the product
+            review.save()
+            return redirect('shop:product_detail', product_id=product.id)
+    else:
+        form = ReviewForm()
+
+    return render(request, 'shop/product-detail.html', {
+        'product': product,
+        'reviews': reviews,
+        'form': form,
+        })
 
 def category_products(request, category_id):
     category = get_object_or_404(Category, id=category_id)
@@ -105,6 +127,12 @@ def get_cart(user):
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+
+    # Prevent vendors from adding their own products to the cart
+    if request.user == product.vendor:
+        messages.error(request, "You cannot purchase your own product.")
+        return redirect('shop:product_detail', product_id=product.id)
+    
     
     if request.method == "POST":
         quantity = int(request.POST.get("quantity", 1))
@@ -402,7 +430,7 @@ def khalti_verify(request):
                         del request.session['grand_total']
 
                     messages.success(request, 'Order has been placed successfully via Khalti!')
-                    return redirect('shop:cart')
+                    return redirect('shop:order_list')
                 except Exception as e:
                     logger.error(f"Failed to create orders after Khalti payment: {str(e)}")
                     return redirect('shop:order_confirmation')

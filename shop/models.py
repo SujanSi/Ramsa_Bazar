@@ -88,6 +88,10 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def get_review_count(self):
+        return self.reviews_set.count()
+    
 
 class Reviews(models.Model):
     product=models.ForeignKey(Product, on_delete=models.CASCADE,db_index=True)

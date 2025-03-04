@@ -28,3 +28,9 @@ class ContactForm(forms.ModelForm):
                 'rows': 5
             }),
         }
+
+
+class ReviewForm(forms.ModelForm):
+    class Meta:
+        model = Reviews
+        fields = ['name', 'email', 'comment']

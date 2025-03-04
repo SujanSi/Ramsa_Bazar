@@ -204,8 +204,11 @@
                                         <a href="{% url 'shop:product_detail' product.id %}">{{ product.name|slice:":8" }}</a>
                                     </span>
                                     <div class="product-o__rating gl-rating-style">
-                                        <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-                                        <span class="product-o__review">(23)</span>
+                                        {% if product.get_review_count > 0 %}
+                                                Reviews ({{ product.get_review_count }})
+                                            {% else %}
+                                                No Reviews yet
+                                            {% endif %}
                                     </div>
                                     <span class="product-o__price">
                                         ${{ product.price }}

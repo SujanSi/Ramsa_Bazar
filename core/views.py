@@ -218,7 +218,7 @@ def check_email(request):
 
 def user_logout(request):
     logout(request)
-    return redirect('vendor:home')  # Redirect to login page after logout
+    return redirect('shop:home')  # Redirect to login page after logout
 
 
 @login_required
