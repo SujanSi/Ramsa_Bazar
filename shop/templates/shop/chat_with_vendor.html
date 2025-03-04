@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block container %}
+<div class="chat-page u-s-p-t-90">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-12">
+                <h2>Chat with Vendor about {{ product.name }}</h2>
+                <p>Vendor: {{ product.vendor.full_name }}</p>
+
+                <!-- Chat Container -->
+                <div class="chat-container">
+                    <!-- Scrollable Messages -->
+                    <div class="chat-messages" id="chat-messages">
+                        {% for message in chat_messages %}
+                            <div class="chat-message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+                                <p><strong>{{ message.sender.full_name }}:</strong></p>
+                                <p>{{ message.message }}</p>
+                                <span class="chat-timestamp">{{ message.created_at|date:"M d, Y H:i" }}</span>
+                                <!-- Debug info -->
+                                <small> Product ID: {{ message.product.id }}</small>
+                            </div>
+                        {% empty %}
+                            <p>No messages yet. Start the conversation!</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Fixed Chat Input -->
+                    <form class="chat-form" method="POST" action="{% url 'shop:chat_with_vendor' product.id %}">
+                        {% csrf_token %}
+                        <div class="chat-input-group">
+                            <textarea name="message" class="chat-input" placeholder="Type your message..." required></textarea>
+                            <button type="submit" class="btn btn--e-brand-b-2" style="background-color:rgb(232, 105, 14); padding:10px;">Send</button>
+                        </div>
+                    </form>
+                </div>
+
+                <a href="{% url 'shop:product_detail' product.id %}" class="btn btn--e-back-to-product u-s-m-t-15">Back to Product</a>
+            </div>
+        </div>
+    </div>
+</div>
+<br>
+<br>
+
+<style>
+    .chat-container {
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 5px;
+        max-height: 500px; /* Fixed height for the entire container */
+        position: relative; /* To position the fixed input group */
+        display: flex;
+        flex-direction: column;
+    }
+    .chat-messages {
+        flex: 1; /* Takes up available space */
+        overflow-y: auto; /* Scrollable messages */
+        margin-bottom: 10px; /* Space before the fixed input */
+        padding-bottom: 80px; /* Prevent messages from being hidden under the fixed input */
+    }
+    .chat-message {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    .chat-message.sent {
+        background-color: #f0f0f0;
+        margin-left: 20%;
+    }
+    .chat-message.received {
+        background-color: #e8f5e9;
+        margin-right: 20%;
+    }
+    .chat-timestamp {
+        font-size: 0.8em;
+        color: #666;
+    }
+    .chat-form {
+        position: absolute; /* Fixed at the bottom of the container */
+        bottom: 20px; /* Align with padding */
+        left: 20px; /* Align with padding */
+        right: 20px; /* Align with padding */
+        background-color: #fff; /* Ensure it’s visible over messages */
+    }
+    .chat-input-group {
+        display: flex;
+        gap: 10px;
+    }
+    .chat-input {
+        flex-grow: 1;
+        min-height: 50px;
+        resize: vertical;
+        margin-bottom: 0; /* Remove extra spacing */
+    }
+    /* Back to Product button styling */
+    .btn--e-back-to-product {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: rgb(232, 105, 14);
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+    .btn--e-back-to-product:hover {
+        background-color: rgb(200, 90, 12);
+        transform: translateY(-2px);
+    }
+    .btn--e-back-to-product:active {
+        transform: translateY(1px);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatMessages = document.getElementById('chat-messages');
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    });
+</script>
+{% endblock container %}

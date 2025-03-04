@@ -1,0 +1,77 @@
+{% extends 'dashboard/base.html' %}
+
+{% block container %}
+<div class="dashboard-content u-s-p-t-90">
+    <div class="container">
+        <h2>Reply to {{ original_message.sender.full_name }}</h2>
+        <p>About: {{ original_message.product.name }}</p>
+
+        <!-- Conversation -->
+        <div class="conversation-container">
+            <div class="message-list">
+                {% for message in conversation %}
+                    <div class="message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+                        <p><strong>{{ message.sender.full_name }}:</strong> {{ message.message }}</p>
+                        <span class="timestamp">{{ message.created_at|date:"M d, Y H:i" }}</span>
+                    </div>
+                {% empty %}
+                    <p>No conversation yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Reply Form -->
+        <form method="POST" class="reply-form u-s-m-t-20">
+            {% csrf_token %}
+            <div class="form-group">
+                <textarea name="message" class="form-control" rows="4" placeholder="Type your reply..." required></textarea>
+            </div>
+            <br>
+            <button type="submit" class="btn btn--e-brand-b-2" style="background-color:rgb(232, 105, 14);">Send Reply</button>
+        </form>
+
+        <a href="{% url 'dashboard:vendor_messages' %}" class="btn btn--e-transparent-brand-b-2 u-s-m-t-15">Back to Messages</a>
+    </div>
+</div>
+
+<style>
+    .conversation-container {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .message {
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 5px;
+    }
+    .message.sent {
+        background-color: #f0f0f0;
+        margin-left: 20%;
+    }
+    .message.received {
+        background-color: #e8f5e9;
+        margin-right: 20%;
+    }
+    .timestamp {
+        font-size: 0.8em;
+        color: #666;
+    }
+    .form-control {
+        width: 100%;
+        resize: vertical;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const container = document.querySelector('.conversation-container');
+        if (container) {
+            container.scrollTop = container.scrollHeight;
+        }
+    });
+</script>
+{% endblock container %}

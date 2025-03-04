@@ -161,7 +161,68 @@ def remove_product(request, product_id):
         return redirect(f"{reverse('dashboard:vendor_products')}?type={product_type}")
     return redirect(f"{reverse('dashboard:vendor_products')}?type={product_type}")
 
+from shop.models import ChatMessage
+@login_required
 
+def vendor_messages(request):
+    # Check if user is a vendor and KYC verified
+    if request.user.role != 'vendor' or not request.user.kyc_verified:
+        return render(request, 'dashboard/access_denied.html', {
+            'message': 'Only KYC-verified vendors can remove products.'
+        })
+    
+    # Get the latest message for each sender-product combination
+    messages = ChatMessage.objects.filter(receiver=request.user).order_by('product', '-created_at')
+    
+    # To avoid duplicates, we can select only the latest message for each product
+    latest_messages = []
+    seen_products = set()
+
+    for message in messages:
+        if message.product not in seen_products:
+            latest_messages.append(message)
+            seen_products.add(message.product)
+
+    return render(request, 'dashboard/vendor_messages.html', {
+        'messages': latest_messages,
+    })
+
+from django.db.models import Q
+@login_required
+def reply_message(request, message_id):
+    # Get the original message
+    original_message = get_object_or_404(ChatMessage, id=message_id, receiver=request.user)
+    
+    if request.user.role != 'vendor':
+        return render(request, 'dashboard/access_denied.html')
+    
+    # Get the full conversation between vendor and sender for this product
+    conversation = ChatMessage.objects.filter(
+        product=original_message.product
+    ).filter(
+        Q(sender=request.user, receiver=original_message.sender) |
+        Q(sender=original_message.sender, receiver=request.user)
+    ).order_by('created_at')
+
+    if request.method == 'POST':
+        message_content = request.POST.get('message')
+        if message_content:
+            # Create a new reply message
+            ChatMessage.objects.create(
+                sender=request.user,
+                receiver=original_message.sender,
+                product=original_message.product,
+                message=message_content
+            )
+            # Mark the original message as read (optional)
+            original_message.is_read = True
+            original_message.save()
+            return redirect('dashboard:reply_message', message_id=message_id)
+
+    return render(request, 'dashboard/reply_message.html', {
+        'original_message': original_message,
+        'conversation': conversation,
+    })
 
 from shop.models import Order
 from django.http import HttpResponse

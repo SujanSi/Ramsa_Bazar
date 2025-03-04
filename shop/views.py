@@ -102,6 +102,38 @@ def product_detail(request, product_id):
         'form': form,
         })
 
+
+@login_required
+def chat_with_vendor(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    
+    if request.user == product.vendor:
+        return redirect('shop:product_detail', product_id=product.id)  # Vendors can't chat with themselves
+    
+    # Corrected filter syntax
+    chat_messages = ChatMessage.objects.filter(
+        product=product
+    ).filter(
+        Q(sender=request.user, receiver=product.vendor) | Q(sender=product.vendor, receiver=request.user)
+    ).order_by('created_at')
+
+    if request.method == 'POST':
+        message_content = request.POST.get('message')
+        if message_content:
+            ChatMessage.objects.create(
+                sender=request.user,
+                receiver=product.vendor,
+                product=product,
+                message=message_content
+            )
+            return redirect('shop:chat_with_vendor', product_id=product.id)
+
+    return render(request, 'shop/chat_with_vendor.html', {
+        'product': product,
+        'chat_messages': chat_messages,
+    })
+
+
 def category_products(request, category_id):
     category = get_object_or_404(Category, id=category_id)
     products = Product.objects.filter(categories=category)

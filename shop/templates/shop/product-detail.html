@@ -139,8 +139,13 @@
                                         
                                         <div class="u-s-m-b-15">
                                             {% if request.user.is_authenticated %}
-                                                <button class="btn btn--e-brand-b-2" type="submit" style="background-color:rgb(232, 105, 14); ">Add to Cart</button>
+                                                <!-- Show both Add to Cart and Chat with Vendor if authenticated -->
+                                                <button class="btn btn--e-brand-b-2" type="submit" style="background-color:rgb(232, 105, 14);">Add to Cart</button>
+                                                {% if request.user != product.vendor %}
+                                                    <a href="{% url 'shop:chat_with_vendor' product.id %}" class="btn btn--e-brand-b-2" style="background-color:rgb(232, 105, 14); margin-left: 10px;">Chat with Vendor</a>
+                                                {% endif %}
                                             {% else %}
+                                                <!-- Show only Login to Add to Cart if not authenticated -->
                                                 <a href="{% url 'core:login' %}" class="btn btn--e-brand-b-2">Login to Add to Cart</a>
                                             {% endif %}
                                         </div>

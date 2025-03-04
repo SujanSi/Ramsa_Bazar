@@ -17,4 +17,8 @@ urlpatterns = [
     path('message/', message, name = 'message'),
     path('notification/', notification, name = 'notification'),
 
+    path('messages/',vendor_messages, name='vendor_messages'),
+    path('messages/reply/<int:message_id>/', reply_message, name='reply_message'),
+
+
 ]
