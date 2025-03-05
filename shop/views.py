@@ -531,5 +531,57 @@ def order_list(request):
     return render(request, 'shop/order_list.html', {'orders': orders})
 
 
-def auction_view(request):
-    return render(request, 'shop/auction.html')
+# View to list all active auction products
+def auction_list(request):
+    auctions = Auction.objects.filter(
+        is_active=True,
+        end_time__gt=timezone.now()
+    ).select_related('product').order_by('end_time')
+    
+    context = {
+        'auctions': auctions,
+    }
+    return render(request, 'shop/auction_list.html', context)
+
+# View to view details and place a bid on an auction
+@login_required
+def auction_detail(request, auction_id):
+    auction = get_object_or_404(Auction, id=auction_id)
+    product = auction.product
+    
+    if not auction.is_active or timezone.now() >= auction.end_time:
+        auction.is_active = False
+        auction.save()
+        messages.info(request, "This auction has ended.")
+        return redirect('shop:auction_list')
+
+    if request.method == 'POST':
+        form = BidForm(request.POST)
+        if form.is_valid():
+            bid_amount = form.cleaned_data['amount']
+            # Check if bid is higher than current highest bid or starting bid
+            if (auction.highest_bid and bid_amount <= auction.highest_bid) or bid_amount <= auction.starting_bid:
+                messages.error(request, "Your bid must be higher than the current highest bid or starting bid.")
+            elif request.user == product.vendor:
+                messages.error(request, "You cannot bid on your own auction.")
+            else:
+                bid = Bid(
+                    auction=auction,
+                    bidder=request.user,
+                    amount=bid_amount
+                )
+                bid.save()  # This triggers update_highest_bid via Bid.save()
+                messages.success(request, "Your bid has been placed successfully!")
+                return redirect('shop:auction_detail', auction_id=auction.id)
+        else:
+            messages.error(request, "Invalid bid amount.")
+    else:
+        form = BidForm()
+
+    context = {
+        'auction': auction,
+        'product': product,
+        'form': form,
+        'bids': auction.bids.order_by('-amount')[:5],  # Show top 5 bids
+    }
+    return render(request, 'shop/auction_detail.html', context)

@@ -20,7 +20,9 @@ urlpatterns = [
     path('about/', about, name='about'),
     path('orders/', order_list, name='order_list'),
     path('search/', search_view, name="search"),
-    path('auction/', auction_view, name="auction"),
+
+    path('auctions/', auction_list, name='auction_list'),
+    path('auction/<int:auction_id>/', auction_detail, name='auction_detail'),
 
 
 ]
