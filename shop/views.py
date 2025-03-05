@@ -530,3 +530,6 @@ def order_list(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'shop/order_list.html', {'orders': orders})
 
+
+def auction_view(request):
+    return render(request, 'shop/auction.html')
