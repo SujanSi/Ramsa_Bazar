@@ -67,7 +67,7 @@ def vendor_products(request):
     products = Product.objects.filter(
         vendor=request.user,
         product_type=product_type
-    ).select_related('categories', 'brand', 'size').order_by('-created_at')
+    ).select_related('categories', 'brand', 'size').prefetch_related('auction').order_by('-created_at')
 
     context = {
         'vendor': request.user,
@@ -76,7 +76,8 @@ def vendor_products(request):
     }
     return render(request, 'dashboard/vendor_products.html', context)
 
-
+from .forms import AuctionProductForm
+from shop.models import Auction
 @login_required
 def add_product(request):
     # Check if user is a vendor and KYC verified
@@ -91,18 +92,24 @@ def add_product(request):
         product_type = 'selling'
 
     if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES)
+        form = AuctionProductForm(request.POST, request.FILES) if product_type == 'auction' else ProductForm(request.POST, request.FILES)
         if form.is_valid():
             product = form.save(commit=False)
             product.vendor = request.user
-            product.product_type = product_type  # Set the product_type correctly
+            product.product_type = product_type
             product.save()
+            if product_type == 'auction':
+                Auction.objects.create(
+                    product=product,
+                    start_time=form.cleaned_data['start_time'],
+                    end_time=form.cleaned_data['end_time'],
+                    starting_bid=form.cleaned_data['starting_bid']
+                )
             return redirect(f"{reverse('dashboard:vendor_products')}?type={product_type}")
         else:
-            # Print form errors for debugging
             print(form.errors)
     else:
-        form = ProductForm(initial={'product_type': product_type})
+        form = AuctionProductForm(initial={'product_type': product_type}) if product_type == 'auction' else ProductForm(initial={'product_type': product_type})
 
     context = {
         'form': form,
@@ -121,18 +128,54 @@ def edit_product(request, product_id):
             'message': 'Only KYC-verified vendors can edit products.'
         })
 
+@login_required
+def edit_product(request, product_id):
+    # Check if user is a vendor and KYC verified
+    if request.user.role != 'vendor' or not request.user.kyc_verified:
+        return render(request, 'dashboard/access_denied.html', {
+            'message': 'Only KYC-verified vendors can edit products.'
+        })
+
+    # Get the product and ensure it belongs to the vendor
     product = get_object_or_404(Product, id=product_id, vendor=request.user)
-    product_type = request.GET.get('type', 'selling')
-    if product_type not in ['selling', 'auction', 'renting']:
-        product_type = 'selling'
+    product_type = product.product_type  # Use the product's actual type, not GET parameter
+    auction = product.auction if product_type == 'auction' else None
 
     if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES, instance=product)
+        # Use AuctionProductForm for auction products, ProductForm otherwise
+        form = AuctionProductForm(request.POST, request.FILES, instance=product) if product_type == 'auction' else ProductForm(request.POST, request.FILES, instance=product)
         if form.is_valid():
-            form.save()
+            product = form.save()
+            # Handle auction-specific fields
+            if product_type == 'auction':
+                if auction:
+                    # Update existing auction
+                    auction.start_time = form.cleaned_data['start_time']
+                    auction.end_time = form.cleaned_data['end_time']
+                    auction.starting_bid = form.cleaned_data['starting_bid']
+                    auction.save()
+                else:
+                    # Create new auction if it doesn't exist
+                    Auction.objects.create(
+                        product=product,
+                        start_time=form.cleaned_data['start_time'],
+                        end_time=form.cleaned_data['end_time'],
+                        starting_bid=form.cleaned_data['starting_bid']
+                    )
             return redirect(f"{reverse('dashboard:vendor_products')}?type={product_type}")
+        else:
+            print(form.errors)  # Debug form errors
     else:
-        form = ProductForm(instance=product)
+        # Initialize form with existing data
+        if product_type == 'auction' and auction:
+            initial_data = {
+                'start_time': auction.start_time,
+                'end_time': auction.end_time,
+                'starting_bid': auction.starting_bid
+            }
+            form = AuctionProductForm(instance=product, initial=initial_data)
+        else:
+            form = ProductForm(instance=product)
 
     context = {
         'form': form,

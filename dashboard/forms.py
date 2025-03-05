@@ -123,3 +123,29 @@ class ProductForm(forms.ModelForm):
 
         def clean_availability(self):
          return self.cleaned_data.get('availability', False) 
+        
+    
+
+class AuctionProductForm(ProductForm):
+    start_time = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        required=True
+    )
+    end_time = forms.DateTimeField(
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        required=True
+    )
+    starting_bid = forms.DecimalField(
+        max_digits=10, decimal_places=2, min_value=0.01, required=True
+    )
+
+    class Meta(ProductForm.Meta):
+        fields = ProductForm.Meta.fields + ['start_time', 'end_time', 'starting_bid']
+
+    def clean(self):
+        cleaned_data = super().clean()
+        start_time = cleaned_data.get('start_time')
+        end_time = cleaned_data.get('end_time')
+        if start_time and end_time and start_time >= end_time:
+            raise forms.ValidationError("End time must be after start time.")
+        return cleaned_data

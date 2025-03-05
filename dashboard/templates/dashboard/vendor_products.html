@@ -38,6 +38,11 @@
                                         <th>Discount</th>
                                         <th>Stock</th>
                                         <th>SKU</th>
+                                        {% if product_type == 'auction' %}
+                                                    <th>Starting Bid</th>
+                                                    <th>End Time</th>
+                                                    <th>Time Left</th>
+                                                {% endif %}
                                         <th>Image</th>
                                         <th>Actions</th>
                                     </tr>
@@ -51,6 +56,11 @@
                                         <td>{{ product.discount|default:'0' }}%</td>
                                         <td>{{ product.stock|default:'N/A' }}</td>
                                         <td><span class="badge bg-secondary">{{ product.sku|default:'N/A' }}</span></td>
+                                        {% if product_type == 'auction' %}
+                                            <td>${{ product.auction.starting_bid|default:'0.00' }}</td>
+                                            <td>{{ product.auction.end_time|date:"Y-m-d H:i" }}</td>
+                                            <td>{{ product.auction.time_left }}</td>
+                                        {% endif %}
                                         <td>
                                             {% if product.image %}
                                             <img src="{{ product.image.url }}" alt="{{ product.name }}" 

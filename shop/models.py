@@ -1,5 +1,7 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
+import uuid
 
 
 
@@ -92,6 +94,58 @@ class Product(models.Model):
     def get_review_count(self):
         return self.reviews_set.count()
     
+
+class Auction(models.Model):
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, limit_choices_to={'product_type': 'auction'}, related_name='auction')
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    starting_bid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    highest_bid = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    highest_bidder = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='winning_bids')
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Auction"
+        indexes = [models.Index(fields=['start_time', 'end_time', 'is_active'])]
+
+    def __str__(self):
+        return f"Auction for {self.product.name}"
+
+    def time_left(self):
+        now = timezone.now()
+        if now >= self.end_time:
+            self.is_active = False
+            self.save()
+            return "Auction Ended"
+        delta = self.end_time - now
+        return f"{delta.days} days, {delta.seconds // 3600} hours, {(delta.seconds // 60) % 60} minutes"
+
+    def update_highest_bid(self, bid_amount, bidder):
+        if self.is_active and (self.highest_bid is None or bid_amount > self.highest_bid):
+            self.highest_bid = bid_amount
+            self.highest_bidder = bidder
+            self.save()
+
+class Bid(models.Model):
+    auction = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name='bids')
+    bidder = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bids')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Bid"
+        indexes = [models.Index(fields=['auction', 'created_at'])]
+
+    def __str__(self):
+        return f"{self.amount} by {self.bidder} on {self.auction}"
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.auction.update_highest_bid(self.amount, self.bidder)
+        
+
 
 class Reviews(models.Model):
     product=models.ForeignKey(Product, on_delete=models.CASCADE,db_index=True)
