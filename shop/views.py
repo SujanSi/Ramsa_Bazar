@@ -531,15 +531,41 @@ def order_list(request):
     return render(request, 'shop/order_list.html', {'orders': orders})
 
 
-# View to list all active auction products
+# View for ongoing (live) auctions
 def auction_list(request):
     auctions = Auction.objects.filter(
         is_active=True,
-        end_time__gt=timezone.now()
+        start_time__lte=timezone.now(),  # Started already
+        end_time__gt=timezone.now()      # Not yet ended
     ).select_related('product').order_by('end_time')
     
     context = {
         'auctions': auctions,
+        'auction_type': 'live',  # Used in template logic
+    }
+    return render(request, 'shop/auction_list.html', context)
+
+# View for future (upcoming) auctions
+def auction_upcoming(request):
+    auctions = Auction.objects.filter(
+        start_time__gt=timezone.now()  # Starts in the future
+    ).select_related('product').order_by('start_time')
+    
+    context = {
+        'auctions': auctions,
+        'auction_type': 'upcoming',
+    }
+    return render(request, 'shop/auction_list.html', context)
+
+# View for past auctions
+def auction_past(request):
+    auctions = Auction.objects.filter(
+        end_time__lte=timezone.now()  # Ended
+    ).select_related('product').prefetch_related('bids').order_by('-end_time')
+    
+    context = {
+        'auctions': auctions,
+        'auction_type': 'past',
     }
     return render(request, 'shop/auction_list.html', context)
 

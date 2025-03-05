@@ -38,3 +38,30 @@ class OrderAdmin(admin.ModelAdmin):
 @admin.register(Contact)
 class ContactAdmin(admin.ModelAdmin):
     list_display=('name','email','subject','message','created_at')
+
+# Auction Admin
+@admin.register(Auction)
+class AuctionAdmin(admin.ModelAdmin):
+    list_display = ('product', 'start_time', 'end_time', 'starting_bid', 'highest_bid', 'highest_bidder', 'is_active', 'time_left')
+    search_fields = ('product__name', 'highest_bidder__username')
+    list_filter = ('is_active', 'start_time', 'end_time')
+    list_per_page = 20
+    
+    def time_left(self, obj):
+        return obj.time_left()
+    time_left.short_description = 'Time Remaining'
+
+    def get_queryset(self, request):
+        # Optimize queries
+        return super().get_queryset(request).select_related('product', 'highest_bidder')
+
+# Bid Admin
+@admin.register(Bid)
+class BidAdmin(admin.ModelAdmin):
+    list_display = ('auction', 'bidder', 'amount', 'created_at')
+    search_fields = ('auction__product__name', 'bidder__username')
+    list_filter = ('created_at',)
+    list_per_page = 20
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('auction__product', 'bidder')

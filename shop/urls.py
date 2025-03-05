@@ -21,7 +21,9 @@ urlpatterns = [
     path('orders/', order_list, name='order_list'),
     path('search/', search_view, name="search"),
 
-    path('auctions/', auction_list, name='auction_list'),
+    path('auctions/live/', auction_list, name='auction_list'),
+    path('auctions/upcoming/',auction_upcoming, name='auction_upcoming'),
+    path('auctions/past/',auction_past, name='auction_past'),
     path('auction/<int:auction_id>/', auction_detail, name='auction_detail'),
 
 
