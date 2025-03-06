@@ -6,8 +6,8 @@
     <div class="container">
         <div class="row">
             <div class="col-lg-12">
-                <h2>Chat with Vendor about {{ product.name }}</h2>
-                <p>Vendor: {{ product.vendor.full_name }}</p>
+                <h2 class="chat-title">Chat about <span>{{ product.name }}</span></h2>
+                <p class="vendor-info">Vendor: <strong>{{ product.vendor.full_name }}</strong></p>
 
                 <!-- Chat Container -->
                 <div class="chat-container">
@@ -15,14 +15,16 @@
                     <div class="chat-messages" id="chat-messages">
                         {% for message in chat_messages %}
                             <div class="chat-message {% if message.sender == request.user %}sent{% else %}received{% endif %}">
-                                <p><strong>{{ message.sender.full_name }}:</strong></p>
-                                <p>{{ message.message }}</p>
-                                <span class="chat-timestamp">{{ message.created_at|date:"M d, Y H:i" }}</span>
-                                <!-- Debug info -->
-                                <small> Product ID: {{ message.product.id }}</small>
+                                <div class="message-content">
+                                    <p class="sender-name">{{ message.sender.full_name }}</p>
+                                    <p class="message-text">{{ message.message }}</p>
+                                    <span class="chat-timestamp">{{ message.created_at|date:"M d, Y H:i" }}</span>
+                                    <!-- Debug info (optional) -->
+                                    <small class="debug-info">Product ID: {{ message.product.id }}</small>
+                                </div>
                             </div>
                         {% empty %}
-                            <p>No messages yet. Start the conversation!</p>
+                            <p class="no-messages">No messages yet. Start the conversation below!</p>
                         {% endfor %}
                     </div>
 
@@ -31,86 +33,183 @@
                         {% csrf_token %}
                         <div class="chat-input-group">
                             <textarea name="message" class="chat-input" placeholder="Type your message..." required></textarea>
-                            <button type="submit" class="btn btn--e-brand-b-2" style="background-color:rgb(232, 105, 14); padding:10px;">Send</button>
+                            <button type="submit" class="btn btn--send">Send</button>
                         </div>
                     </form>
                 </div>
 
-                <a href="{% url 'shop:product_detail' product.id %}" class="btn btn--e-back-to-product u-s-m-t-15">Back to Product</a>
+                <a href="{% url 'shop:product_detail' product.id %}" class="btn btn--back-to-product">Back to Product</a>
             </div>
         </div>
     </div>
 </div>
-<br>
-<br>
+<br><br>
 
 <style>
+    /* General Layout */
+    .chat-page {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding-bottom: 50px;
+    }
+    .chat-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #333;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .chat-title span {
+        color: #e8690e;
+        font-style: italic;
+    }
+    .vendor-info {
+        text-align: center;
+        color: #666;
+        font-size: 1.1rem;
+        margin-bottom: 20px;
+    }
+
+    /* Chat Container */
     .chat-container {
-        border: 1px solid #ddd;
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         padding: 20px;
-        border-radius: 5px;
-        max-height: 500px; /* Fixed height for the entire container */
-        position: relative; /* To position the fixed input group */
+        max-height: 600px;
+        position: relative;
         display: flex;
         flex-direction: column;
+        transition: all 0.3s ease;
     }
+    .chat-container:hover {
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Scrollable Messages */
     .chat-messages {
-        flex: 1; /* Takes up available space */
-        overflow-y: auto; /* Scrollable messages */
-        margin-bottom: 10px; /* Space before the fixed input */
-        padding-bottom: 80px; /* Prevent messages from being hidden under the fixed input */
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 80px; /* Space for fixed input */
     }
     .chat-message {
-        margin: 10px 0;
-        padding: 10px;
-        border-radius: 5px;
+        margin: 15px 0;
+        padding: 15px;
+        border-radius: 10px;
+        animation: fadeIn 0.3s ease-in;
     }
     .chat-message.sent {
-        background-color: #f0f0f0;
+        background: linear-gradient(135deg, #e8690e, #ff9f43);
+        color: #fff;
         margin-left: 20%;
+        text-align: right;
     }
     .chat-message.received {
-        background-color: #e8f5e9;
+        background: linear-gradient(135deg, #eceff1, #cfd8dc);
+        color: #333;
         margin-right: 20%;
     }
+    .message-content {
+        position: relative;
+    }
+    .sender-name {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    .message-text {
+        margin: 5px 0;
+        word-wrap: break-word;
+    }
     .chat-timestamp {
-        font-size: 0.8em;
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.8); /* White for sent, adjusted for received */
+    }
+    .chat-message.received .chat-timestamp {
         color: #666;
     }
+    .debug-info {
+        font-size: 0.65rem;
+        color: rgba(255, 255, 255, 0.6);
+    }
+    .no-messages {
+        text-align: center;
+        color: #999;
+        font-style: italic;
+        padding: 20px;
+    }
+
+    /* Chat Form */
     .chat-form {
-        position: absolute; /* Fixed at the bottom of the container */
-        bottom: 20px; /* Align with padding */
-        left: 20px; /* Align with padding */
-        right: 20px; /* Align with padding */
-        background-color: #fff; /* Ensure it’s visible over messages */
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        background: #fff;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     }
     .chat-input-group {
         display: flex;
         gap: 10px;
+        align-items: center;
     }
     .chat-input {
         flex-grow: 1;
         min-height: 50px;
-        resize: vertical;
-        margin-bottom: 0; /* Remove extra spacing */
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 1rem;
+        resize: none;
+        transition: border-color 0.3s ease;
     }
-    /* Back to Product button styling */
-    .btn--e-back-to-product {
-        display: inline-block;
-        padding: 10px 20px;
-        background-color: rgb(232, 105, 14);
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
-        font-weight: bold;
-        transition: background-color 0.3s ease, transform 0.2s ease;
+    .chat-input:focus {
+        outline: none;
+        border-color: #e8690e;
+        box-shadow: 0 0 5px rgba(232, 105, 14, 0.3);
     }
-    .btn--e-back-to-product:hover {
-        background-color: rgb(200, 90, 12);
+    .btn--send {
+        background: #e8690e;
+        color: #fff;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .btn--send:hover {
+        background: #d45e0d;
         transform: translateY(-2px);
     }
-    .btn--e-back-to-product:active {
+    .btn--send:active {
         transform: translateY(1px);
+    }
+
+    /* Back to Product Button */
+    .btn--back-to-product {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 12px 25px;
+        background: #e8690e;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: background 0.3s ease, transform 0.2s ease;
+    }
+    .btn--back-to-product:hover {
+        background: #d45e0d;
+        transform: translateY(-2px);
+    }
+    .btn--back-to-product:active {
+        transform: translateY(1px);
+    }
+
+    /* Animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 
