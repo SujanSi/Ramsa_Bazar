@@ -83,10 +83,6 @@
                             <div>
                                 <div class="pd-detail__inline">
                                     <span class="pd-detail__price">${{ product.price }}</span>
-                                    {% if product.discount %}
-                                        <span class="pd-detail__discount">({{ product.discount }}% OFF)</span>
-                                        <del class="pd-detail__del">${{ product.price|add:product.discount }}</del>
-                                    {% endif %}
                                 </div>
                             </div>
                             <div class="u-s-m-b-15">
@@ -151,6 +147,20 @@
                                         </div>
                                     </div>
                                 </form>
+
+                                <!-- Separate section for additional buttons -->
+                                {% if request.user.is_authenticated %}
+                                <div class="u-s-m-b-15">
+                                    {% if product.product_type != 'auction' %}
+                                        <form method="POST" action="{% url 'shop:subscribe_to_price_drop' product.id %}" style="display:inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn--e-brand-b-2" style="background-color:rgb(232, 105, 14); margin-left: 10px;">Get Price Drop Alerts</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            </div>
+
                             </div>
                             <div class="u-s-m-b-15">
                                 <span class="pd-detail__label u-s-m-b-8">Product Policy:</span>

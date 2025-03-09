@@ -1,0 +1,37 @@
+<!-- shop/templates/shop/notifications.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block container %}
+<div class="container mt-4">
+    <h2>Your Notifications</h2>
+    
+    {% if notifications %}
+        <form method="post" class="mb-3">
+            {% csrf_token %}
+            <button type="submit" name="mark_read" class="btn btn-secondary">Mark All as Read</button>
+        </form>
+        
+        <ul class="list-group">
+            {% for notification in notifications %}
+                <li class="list-group-item">
+                    <strong>{{ notification.created_at|date:"F d, Y H:i" }}</strong> 
+                    {% if notification.notification_type == 'outbid' %}
+                        <span class="badge bg-warning">Outbid</span>
+                    {% elif notification.notification_type == 'ending_soon' %}
+                        <span class="badge bg-info">Ending Soon</span>
+                    {% else %}
+                        <span class="badge bg-success">Win</span>
+                    {% endif %}
+                    <p>{{ notification.message }}</p>
+                    {% if notification.auction %}
+                        <a href="{% url 'shop:auction_detail' notification.auction.id %}" class="btn btn-sm btn-primary">View Auction</a>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">You have no new notifications.</p>
+    {% endif %}
+</div>
+{% endblock container %}

@@ -577,26 +577,24 @@ def auction_detail(request, auction_id):
     
     if not auction.is_active or timezone.now() >= auction.end_time:
         auction.is_active = False
+        auction.notify_winner()
         auction.save()
         messages.info(request, "This auction has ended.")
         return redirect('shop:auction_list')
+
+    auction.notify_ending_soon()
 
     if request.method == 'POST':
         form = BidForm(request.POST)
         if form.is_valid():
             bid_amount = form.cleaned_data['amount']
-            # Check if bid is higher than current highest bid or starting bid
             if (auction.highest_bid and bid_amount <= auction.highest_bid) or bid_amount <= auction.starting_bid:
                 messages.error(request, "Your bid must be higher than the current highest bid or starting bid.")
             elif request.user == product.vendor:
                 messages.error(request, "You cannot bid on your own auction.")
             else:
-                bid = Bid(
-                    auction=auction,
-                    bidder=request.user,
-                    amount=bid_amount
-                )
-                bid.save()  # This triggers update_highest_bid via Bid.save()
+                bid = Bid(auction=auction, bidder=request.user, amount=bid_amount)
+                bid.save()  # Triggers outbid notification via Bid.save()
                 messages.success(request, "Your bid has been placed successfully!")
                 return redirect('shop:auction_detail', auction_id=auction.id)
         else:
@@ -611,3 +609,39 @@ def auction_detail(request, auction_id):
         'bids': auction.bids.order_by('-amount')[:5],  # Show top 5 bids
     }
     return render(request, 'shop/auction_detail.html', context)
+
+
+
+@login_required
+def notifications(request):
+    notifications = Notification.objects.filter(user=request.user, is_read=False).select_related('auction')
+    if request.method == 'POST' and 'mark_read' in request.POST:
+        notifications.update(is_read=True)
+        return redirect('shop:notifications')
+
+    # Check active auctions for ending soon notifications
+    active_auctions = Auction.objects.filter(is_active=True, end_time__gt=timezone.now())
+    for auction in active_auctions:
+        auction.notify_ending_soon()  # This now avoids duplicates
+
+    context = {'notifications': notifications}
+    return render(request, 'shop/notifications.html', context)
+
+
+@login_required
+def subscribe_to_price_drop(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    if product.product_type == Product.AUCTION:
+        messages.error(request, "Price drop alerts are not available for auction products.")
+        return redirect('shop:product_detail', product_id=product.id)
+    if request.method == 'POST':
+        subscription, created = PriceDropSubscription.objects.get_or_create(
+            user=request.user,
+            product=product,
+            defaults={'last_notified_price': product.price}  # Use price directly since discount is removed
+        )
+        if created:
+            messages.success(request, f"You’ll be notified if the price of {product.name} drops!")
+        else:
+            messages.info(request, f"You’re already subscribed to price drop alerts for {product.name}.")
+    return redirect('shop:product_detail', product_id=product.id)

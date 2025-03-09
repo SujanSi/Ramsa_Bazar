@@ -200,6 +200,14 @@
                     <i class="fas fa-shopping-cart u-s-m-r-6"></i>MY CART
                 </a>
             </li>
+            <li>
+                <a href="{% url 'shop:notifications' %}">
+                    <i class="fas fa-bell u-s-m-r-6"></i>NOTIFICATIONS
+                    {% if user.is_authenticated and unread_notification_count > 0 %}
+                    <span class="badge" style="background-color: #ff6200; color: #fff; padding: 5px; border-radius: 5px;">{{ unread_notification_count }}</span>
+                    {% endif %}
+                </a>
+            </li>
             {% endif %}
         </ul>
         <!--====== End - List ======-->

@@ -3,7 +3,7 @@ from .models import *
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin): 
-    list_display = ('name', 'description', 'additional_information', 'price', 'availability', 'sku','discount', 'image','features','product_type')
+    list_display = ('name', 'description', 'additional_information', 'price', 'availability', 'sku', 'image','features','product_type')
     list_per_page=10
 
 

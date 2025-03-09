@@ -26,5 +26,8 @@ urlpatterns = [
     path('auctions/past/',auction_past, name='auction_past'),
     path('auction/<int:auction_id>/', auction_detail, name='auction_detail'),
 
+    path('notifications/', notifications, name='notifications'),
+    path('product/<int:product_id>/subscribe/', subscribe_to_price_drop, name='subscribe_to_price_drop'),
+
 
 ]

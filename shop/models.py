@@ -1,6 +1,8 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from datetime import timedelta
+from django.apps import apps
 import uuid
 
 
@@ -85,7 +87,7 @@ class Product(models.Model):
     
     class Meta:
         verbose_name = "Product"
-        indexes = [models.Index(fields=['name','description','additional_information','price','discount','availability','sku','size','image','features','categories','stock','brand','product_type'])]
+        indexes = [models.Index(fields=['name','description','additional_information','price','availability','sku','size','image','features','categories','stock','brand','product_type'])]
 
 
     def __str__(self):
@@ -94,7 +96,64 @@ class Product(models.Model):
     def get_review_count(self):
         return self.reviews_set.count()
     
+    def save(self, *args, **kwargs):
+        if self.pk:  # Only check on updates, not creation
+            old_product = Product.objects.get(pk=self.pk)
+            if old_product.price > self.price and self.product_type != self.AUCTION:  # Price dropped (exclude auctions)
+                self.notify_price_drop(old_product.price, self.price)
+        super().save(*args, **kwargs)
 
+    def notify_price_drop(self, old_price, new_price):
+        """Notify subscribers of a price drop."""
+        subscribers = self.price_drop_subscribers.all()
+        for subscription in subscribers:
+            if subscription.last_notified_price is None or subscription.last_notified_price > new_price:
+                message = f"Price drop alert! {self.name} dropped from ${old_price} to ${new_price}."
+                Notification.objects.create(
+                    user=subscription.user,
+                    message=message,
+                    product=self,
+                    notification_type='price_drop'
+                )
+                subscription.last_notified_price = new_price
+                subscription.save()
+
+
+class PriceDropSubscription(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='price_drop_subscriptions')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='price_drop_subscribers')
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+    last_notified_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # Track last price notified
+
+    class Meta:
+        unique_together = ('user', 'product')  # Prevent duplicate subscriptions
+
+    def __str__(self):
+        return f"{self.user} subscribed to {self.product}"
+    
+    
+class Notification(models.Model):
+    NOTIFICATION_TYPES = (
+        ('win', 'Auction Win'),
+        ('outbid', 'Outbid Alert'),
+        ('ending_soon', 'Ending Soon Alert'),
+        ('price_drop', 'Price Drop Alert'),
+    )
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    auction = models.ForeignKey('Auction', on_delete=models.CASCADE, null=True, blank=True)
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, null=True, blank=True)
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES, default='win')
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Notification for {self.user}: {self.message[:50]}"
+    
 class Auction(models.Model):
     product = models.OneToOneField(Product, on_delete=models.CASCADE, limit_choices_to={'product_type': 'auction'}, related_name='auction')
     start_time = models.DateTimeField()
@@ -128,6 +187,57 @@ class Auction(models.Model):
             self.highest_bidder = bidder
             self.save()
 
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Check if auction has ended and hasn't been notified yet
+        if not self.is_active and self.highest_bidder and timezone.now() >= self.end_time:
+            self.notify_winner()
+
+    def notify_winner(self):
+        if self.highest_bidder and not Notification.objects.filter(
+            auction=self, 
+            user=self.highest_bidder
+        ).exists():
+            message = f"Congratulations! You won the auction for {self.product.name} with a bid of ${self.highest_bid}!"
+            Notification.objects.create(
+                user=self.highest_bidder,
+                message=message,
+                auction=self
+            )
+
+    def notify_outbid(self, previous_bidder, new_bid_amount):
+        if previous_bidder and self.is_active and timezone.now() < self.end_time:
+            message = f"You’ve been outbid on {self.product.name}! New highest bid is ${new_bid_amount}. Place a higher bid now."
+            Notification.objects.create(
+                user=previous_bidder,
+                message=message,
+                auction=self,
+                notification_type='outbid'
+            )
+
+    def notify_ending_soon(self):
+        if self.is_active and timezone.now() < self.end_time:
+            time_left = self.end_time - timezone.now()
+            if time_left <= timedelta(minutes=15):  # Notify 15 mins before end
+                UserModel = apps.get_model(settings.AUTH_USER_MODEL)
+                for bidder in self.bids.values('bidder').distinct():
+                    user = UserModel.objects.get(id=bidder['bidder'])
+                    # Check if an "ending soon" notification already exists for this user and auction
+                    if not Notification.objects.filter(
+                        user=user,
+                        auction=self,
+                        notification_type='ending_soon',
+                        created_at__gte=timezone.now() - timedelta(minutes=15)  # Only check last 15 mins
+                    ).exists():
+                        message = f"Auction for {self.product.name} is ending in {int(time_left.total_seconds() // 60)} minutes! Current bid: ${self.highest_bid or self.starting_bid}."
+                        Notification.objects.create(
+                            user=user,
+                            message=message,
+                            auction=self,
+                            notification_type='ending_soon'
+                        )
+
+
 class Bid(models.Model):
     auction = models.ForeignKey(Auction, on_delete=models.CASCADE, related_name='bids')
     bidder = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bids')
@@ -142,8 +252,17 @@ class Bid(models.Model):
         return f"{self.amount} by {self.bidder} on {self.auction}"
     
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.auction.update_highest_bid(self.amount, self.bidder)
+        if self.pk is None:  # Only trigger on new bids, not updates
+            # Store the previous highest bidder before saving
+            previous_highest_bidder = self.auction.highest_bidder
+            super().save(*args, **kwargs)
+            # Update the auction's highest bid and bidder
+            self.auction.update_highest_bid(self.amount, self.bidder)
+            # Notify the previous highest bidder if they were outbid
+            if previous_highest_bidder and previous_highest_bidder != self.bidder:
+                self.auction.notify_outbid(previous_highest_bidder, self.amount)
+        else:
+            super().save(*args, **kwargs)
         
 
 
