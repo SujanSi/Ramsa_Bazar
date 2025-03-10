@@ -175,8 +175,6 @@ class Auction(models.Model):
     def time_left(self):
         now = timezone.now()
         if now >= self.end_time:
-            self.is_active = False
-            self.save()
             return "Auction Ended"
         delta = self.end_time - now
         return f"{delta.days} days, {delta.seconds // 3600} hours, {(delta.seconds // 60) % 60} minutes"
@@ -188,21 +186,32 @@ class Auction(models.Model):
             self.save()
 
     def save(self, *args, **kwargs):
+        now = timezone.now()
+        # Update is_active based on current time and end_time
+        self.is_active = self.end_time > now and self.start_time <= now
         super().save(*args, **kwargs)
         # Check if auction has ended and hasn't been notified yet
-        if not self.is_active and self.highest_bidder and timezone.now() >= self.end_time:
+        # Notify winner only if auction has ended and hasn't been notified
+        if not self.is_active and self.highest_bidder and not Notification.objects.filter(
+            auction=self,
+            user=self.highest_bidder,
+            notification_type='win'
+        ).exists():
             self.notify_winner()
+
 
     def notify_winner(self):
         if self.highest_bidder and not Notification.objects.filter(
             auction=self, 
-            user=self.highest_bidder
+            user=self.highest_bidder,
+            notification_type='win'
         ).exists():
             message = f"Congratulations! You won the auction for {self.product.name} with a bid of ${self.highest_bid}!"
             Notification.objects.create(
                 user=self.highest_bidder,
                 message=message,
-                auction=self
+                auction=self,
+                notification_type='win'
             )
 
     def notify_outbid(self, previous_bidder, new_bid_amount):

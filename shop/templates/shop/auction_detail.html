@@ -151,8 +151,15 @@
                             <div class="text-danger small">{{ error }}</div>
                         {% endfor %}
                     </div>
+                    {% if can_bid %}
                     <button type="submit" class="btn btn-bid w-100">Place Bid</button>
+                {% else %}
+                    <button type="button" class="btn btn-bid w-100 disabled" disabled title="You must be KYC verified to bid">Place Bid</button>
+                {% endif %}
                 </form>
+                {% if not can_bid %}
+                    <p class="text-warning mt-2">You are not KYC verified to bid.</p>
+                {% endif %}
             </div>
             {% else %}
             <p class="mt-3"><a href="{% url 'login' %}" class="text-primary">Log in</a> to place a bid.</p>

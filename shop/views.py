@@ -569,6 +569,8 @@ def auction_past(request):
     }
     return render(request, 'shop/auction_list.html', context)
 
+from user.models import KYCVerification
+
 # View to view details and place a bid on an auction
 @login_required
 def auction_detail(request, auction_id):
@@ -584,19 +586,25 @@ def auction_detail(request, auction_id):
 
     auction.notify_ending_soon()
 
+    # Check KYC verification status
+    can_bid = request.user.kyc_verified or request.user.role == 'superadmin'
+
     if request.method == 'POST':
         form = BidForm(request.POST)
         if form.is_valid():
-            bid_amount = form.cleaned_data['amount']
-            if (auction.highest_bid and bid_amount <= auction.highest_bid) or bid_amount <= auction.starting_bid:
-                messages.error(request, "Your bid must be higher than the current highest bid or starting bid.")
-            elif request.user == product.vendor:
-                messages.error(request, "You cannot bid on your own auction.")
+            if not can_bid:
+                messages.error(request, "You are not KYC verified and cannot place a bid.")
             else:
-                bid = Bid(auction=auction, bidder=request.user, amount=bid_amount)
-                bid.save()  # Triggers outbid notification via Bid.save()
-                messages.success(request, "Your bid has been placed successfully!")
-                return redirect('shop:auction_detail', auction_id=auction.id)
+                bid_amount = form.cleaned_data['amount']
+                if (auction.highest_bid and bid_amount <= auction.highest_bid) or bid_amount <= auction.starting_bid:
+                    messages.error(request, "Your bid must be higher than the current highest bid or starting bid.")
+                elif request.user == product.vendor:
+                    messages.error(request, "You cannot bid on your own auction.")
+                else:
+                    bid = Bid(auction=auction, bidder=request.user, amount=bid_amount)
+                    bid.save()  # Triggers outbid notification via Bid.save()
+                    messages.success(request, "Your bid has been placed successfully!")
+                    return redirect('shop:auction_detail', auction_id=auction.id)
         else:
             messages.error(request, "Invalid bid amount.")
     else:
@@ -606,7 +614,8 @@ def auction_detail(request, auction_id):
         'auction': auction,
         'product': product,
         'form': form,
-        'bids': auction.bids.order_by('-amount')[:5],  # Show top 5 bids
+        'bids': auction.bids.order_by('-amount')[:5], 
+        'can_bid': can_bid, # Show top 5 bids
     }
     return render(request, 'shop/auction_detail.html', context)
 
@@ -614,7 +623,14 @@ def auction_detail(request, auction_id):
 
 @login_required
 def notifications(request):
+    filter_type = request.GET.get('filter', 'all')
+
     notifications = Notification.objects.filter(user=request.user, is_read=False).select_related('auction')
+
+    # Apply filter based on notification_type
+    if filter_type != 'all':
+        notifications = notifications.filter(notification_type=filter_type)
+
     if request.method == 'POST' and 'mark_read' in request.POST:
         notifications.update(is_read=True)
         return redirect('shop:notifications')
@@ -624,7 +640,10 @@ def notifications(request):
     for auction in active_auctions:
         auction.notify_ending_soon()  # This now avoids duplicates
 
-    context = {'notifications': notifications}
+    context = {
+            'notifications': notifications,
+            'current_filter': filter_type,  # Pass current filter to template
+               }
     return render(request, 'shop/notifications.html', context)
 
 

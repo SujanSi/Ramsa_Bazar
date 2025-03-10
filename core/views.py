@@ -125,14 +125,11 @@ def user_login(request):
             print(f"KYC Exists for {user.email}: {kyc_exists}")  # Debugging
 
             # Check if the logged-in user is a vendor and has not completed KYC
-            if user.role == 'vendor':
-                kyc_exists = KYCVerification.objects.filter(user=user).exists()
-                print(f"KYC Exists for {user.email}: {kyc_exists}")  # Debugging
-
-                if not kyc_exists:
-                    print(f"Redirecting {user.email} to KYC Page.")  # Debugging
-                    messages.info(request, "Please complete KYC verification before proceeding.")
-                    return redirect('customer:kyc_verification')  # Ensure the name matches the URL pattern
+            # Redirect to KYC if not completed and not superadmin
+            if user.role != 'superadmin' and not kyc_exists:
+                print(f"Redirecting {user.email} to KYC Page.")  # Debugging
+                messages.info(request, "Please complete KYC verification before proceeding.")
+                return redirect('customer:kyc_verification')
 
             # Redirect based on user role
             if user.role == 'vendor':
