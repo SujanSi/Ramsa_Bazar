@@ -55,6 +55,12 @@ class Product(models.Model):
         (AUCTION, 'Auction'),
     ]
 
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
     vendor = models.ForeignKey(
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE, 
@@ -81,6 +87,9 @@ class Product(models.Model):
         default=SELLING, 
         db_index=True
     )
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    is_flagged = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -155,6 +164,12 @@ class Notification(models.Model):
         return f"Notification for {self.user}: {self.message[:50]}"
     
 class Auction(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
     product = models.OneToOneField(Product, on_delete=models.CASCADE, limit_choices_to={'product_type': 'auction'}, related_name='auction')
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
@@ -162,6 +177,9 @@ class Auction(models.Model):
     highest_bid = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     highest_bidder = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='winning_bids')
     is_active = models.BooleanField(default=True)
+
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

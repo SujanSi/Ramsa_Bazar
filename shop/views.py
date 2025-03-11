@@ -8,6 +8,7 @@ from django.contrib import messages
 from .forms import *
 from django.db.models import Q
 from django.db.models import Count
+from .custom_decorator import check_blacklisted
 
 # Create your views here.
 now = timezone.now()
@@ -17,13 +18,13 @@ def home(request):
 
     # Get products added in the last 30 days
     time_threshold = now - timedelta(days=30)
-    new_arrival = Product.objects.filter(created_at__gte=time_threshold)
+    new_arrival = Product.objects.filter(created_at__gte=time_threshold, status='approved')
 
     # Get only selling products
-    selling_products = Product.objects.filter(product_type='selling')
+    selling_products = Product.objects.filter(product_type='selling', status='approved')
     initial_products = selling_products[:5]
     
-    featured_products = Product.objects.filter(features=True)[:5]
+    featured_products = Product.objects.filter(features=True,status='approved')[:5]
     brand=Brand.objects.all() 
 
     products_with_comment_count = Product.objects.annotate(comment_count=Count('reviews'))
@@ -45,7 +46,7 @@ def search_view(request):
     query = request.POST.get('query', '') if request.method == 'POST' else request.GET.get('query', '')
     category_id = request.POST.get('category_id', '') if request.method == 'POST' else request.GET.get('category_id', '')
     
-    products = Product.objects.all().select_related('categories')  # Optimize query with select_related
+    products = Product.objects.filter(status='approved').select_related('categories')
     
     if query:
         products = products.filter(
@@ -82,7 +83,7 @@ def search_view(request):
 
 
 def product_detail(request, product_id):
-    product = get_object_or_404(Product, id=product_id)
+    product = get_object_or_404(Product, id=product_id, status='approved')
     reviews = Reviews.objects.filter(product=product).order_by('-created_at')
 
     if request.method == 'POST':
@@ -102,7 +103,7 @@ def product_detail(request, product_id):
         'form': form,
         })
 
-
+@check_blacklisted
 @login_required
 def chat_with_vendor(request, product_id):
     product = get_object_or_404(Product, id=product_id)
@@ -136,7 +137,7 @@ def chat_with_vendor(request, product_id):
 
 def category_products(request, category_id):
     category = get_object_or_404(Category, id=category_id)
-    products = Product.objects.filter(categories=category)
+    products = Product.objects.filter(categories=category, status='approved')
     categories = Category.objects.all().order_by('name')
     
     print(f"Category ID: {category_id}")
@@ -156,6 +157,7 @@ def get_cart(user):
     cart, created = Cart.objects.get_or_create(user=user)
     return cart
 
+@check_blacklisted
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
@@ -183,6 +185,7 @@ def add_to_cart(request, product_id):
 
     return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
 
+@check_blacklisted
 @login_required
 def view_cart(request):
     """Display cart items."""
@@ -197,6 +200,7 @@ def view_cart(request):
 
     return render(request, "shop/cart.html", {"cart_items": cart_items, "cart_total": cart_total})
 
+@check_blacklisted
 @login_required
 def update_cart(request, item_id):
     """Update the quantity of a cart item."""
@@ -210,6 +214,7 @@ def update_cart(request, item_id):
             cart_item.save()
     return redirect('shop:cart')
 
+
 @login_required
 def remove_from_cart(request, item_id):
     """Remove an item from the cart."""
@@ -217,6 +222,7 @@ def remove_from_cart(request, item_id):
     cart_item.delete()
     return redirect('shop:cart')
 
+@check_blacklisted
 @login_required
 def checkout(request):
     """Handle checkout process."""
@@ -536,9 +542,12 @@ def auction_list(request):
     auctions = Auction.objects.filter(
         is_active=True,
         start_time__lte=timezone.now(),  # Started already
-        end_time__gt=timezone.now()      # Not yet ended
+        end_time__gt=timezone.now(),
+        product__status='approved'
     ).select_related('product').order_by('end_time')
     
+    print(auctions)
+
     context = {
         'auctions': auctions,
         'auction_type': 'live',  # Used in template logic
@@ -548,7 +557,8 @@ def auction_list(request):
 # View for future (upcoming) auctions
 def auction_upcoming(request):
     auctions = Auction.objects.filter(
-        start_time__gt=timezone.now()  # Starts in the future
+        start_time__gt=timezone.now(),  # Starts in the future
+        product__status='approved'
     ).select_related('product').order_by('start_time')
     
     context = {
@@ -560,7 +570,8 @@ def auction_upcoming(request):
 # View for past auctions
 def auction_past(request):
     auctions = Auction.objects.filter(
-        end_time__lte=timezone.now()  # Ended
+        end_time__lte=timezone.now(),  # Ended
+        product__status='approved'
     ).select_related('product').prefetch_related('bids').order_by('-end_time')
     
     context = {
@@ -573,8 +584,9 @@ from user.models import KYCVerification
 
 # View to view details and place a bid on an auction
 @login_required
+@check_blacklisted
 def auction_detail(request, auction_id):
-    auction = get_object_or_404(Auction, id=auction_id)
+    auction = get_object_or_404(Auction, id=auction_id, product__status='approved')
     product = auction.product
     
     if not auction.is_active or timezone.now() >= auction.end_time:
@@ -648,6 +660,7 @@ def notifications(request):
 
 
 @login_required
+@check_blacklisted
 def subscribe_to_price_drop(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     if product.product_type == Product.AUCTION:
