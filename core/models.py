@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 from django.db import models
+from django.utils.timezone import now
+
 
 
 class CustomUserManager(BaseUserManager):
@@ -46,3 +48,21 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
+    
+    
+class SecurityLog(models.Model):
+    EVENT_CHOICES = [
+        ('FAILED_LOGIN', 'Failed Login'),
+        ('LOGIN', 'Login'),
+        ('PASSWORD_RESET', 'Password Reset'),
+    ]
+
+    user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True)
+    event_type = models.CharField(max_length=50, choices=EVENT_CHOICES)
+    ip_address = models.GenericIPAddressField()
+    user_agent = models.TextField(blank=True, null=True)
+    timestamp = models.DateTimeField(default=now)
+    additional_info = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.user} - {self.event_type} at {self.timestamp}"
