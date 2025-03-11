@@ -14,8 +14,8 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from user.forms import KYCForm
 from django.urls import reverse
-from .models import CustomUser
-from user.models import KYCVerification
+from .models import *
+from user.models import *
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
@@ -112,12 +112,27 @@ def user_login(request):
         email = request.POST['email']
         password = request.POST['password']
         remember = request.POST.get('remember')
+        ip_address = request.META.get('REMOTE_ADDR')  # Get user's IP address
+        user_agent = request.META.get('HTTP_USER_AGENT', '')  # Get user agent (browser info)
+
         print('------------------------------')
         print("Attempting Login for:", email)
+        
+        # Attempt authentication
         user = authenticate(request, email=email, password=password)
-        print("Authenticated User:", email)  # Debugging
 
+        # Log the attempt (successful or failed)
         if user:
+            print("Authenticated User:", email)  # Debugging
+
+            # Log successful login attempt
+            SecurityLog.objects.create(
+                user=user,
+                event_type="LOGIN",
+                ip_address=ip_address,
+                user_agent=user_agent
+            )
+
             login(request, user)
             request.session.set_expiry(0 if not remember else 604800)  # 7 days
             
@@ -125,7 +140,6 @@ def user_login(request):
             print(f"KYC Exists for {user.email}: {kyc_exists}")  # Debugging
 
             # Check if the logged-in user is a vendor and has not completed KYC
-            # Redirect to KYC if not completed and not superadmin
             if user.role != 'superadmin' and not kyc_exists:
                 print(f"Redirecting {user.email} to KYC Page.")  # Debugging
                 messages.info(request, "Please complete KYC verification before proceeding.")
@@ -140,7 +154,14 @@ def user_login(request):
                 return redirect('shop:home')
 
         else:
+            # Log failed login attempt
             print(f"Invalid credentials for {email}")  # Debugging
+            SecurityLog.objects.create(
+                event_type="FAILED_LOGIN",
+                ip_address=ip_address,
+                user_agent=user_agent,
+                additional_info=f"Failed login attempt for email: {email}"
+            )
             messages.error(request, "Invalid email or password.")
             return redirect('core:login')  # Redirect back to login page if authentication fails
 
@@ -276,6 +297,12 @@ def reset_password(request, uidb64, token):
             if password == confirm_password:
                 user.set_password(password)
                 user.save()
+                ip = request.META.get('REMOTE_ADDR')
+                SecurityLog.objects.create(
+                    user=user,
+                    event_type='PASSWORD_RESET',
+                    ip_address=ip
+                )
                 messages.success(request, "Your password has been reset successfully. Please log in.")
                 return redirect('core:login')
             else:

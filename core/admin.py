@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser
+from .models import *
 
 class CustomUserAdmin(UserAdmin):
     # Define the fields to display in the admin list view
@@ -28,3 +28,9 @@ class CustomUserAdmin(UserAdmin):
     list_filter = ('role', 'is_active', 'is_staff', 'is_superuser')
 
 admin.site.register(CustomUser, CustomUserAdmin)
+
+
+@admin.register(SecurityLog)
+class SecurityLogAdmin(admin.ModelAdmin):
+    list_display = ("user", "event_type", "ip_address", "timestamp")
+    list_filter = ("event_type", "timestamp")
