@@ -29,6 +29,21 @@ def home(request):
 
     products_with_comment_count = Product.objects.annotate(comment_count=Count('reviews'))
 
+    auctions = Auction.objects.filter(
+        is_active=True,
+        start_time__lte=timezone.now(),
+        end_time__gt=timezone.now(),
+        status='approved',
+        product__status='approved'
+    ).select_related('product').order_by('end_time')[:2]
+
+
+# Fetch the latest upcoming auction
+    upcoming_auction = Auction.objects.filter(
+        start_time__gt=timezone.now(),  # Starts in the future
+        status='approved',              # Only approved auctions
+        product__status='approved'      # Only approved products
+    ).select_related('product').order_by('start_time').first()
 
     context = {
         'categories': categories,
@@ -38,6 +53,8 @@ def home(request):
         'featured_products': featured_products,
         'brand': brand,
         'products_with_comment_count': products_with_comment_count,
+        'auctions': auctions,
+        'upcoming_auction': upcoming_auction,
     }
 
     return render(request, "home.html", context)
