@@ -536,6 +536,24 @@ def order_list(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'shop/order_list.html', {'orders': orders})
 
+@login_required
+def request_refund(request, order_id):
+    order = Order.objects.get(id=order_id, user=request.user)
+    if request.method == 'POST':
+        reason = request.POST.get('reason')
+        if not RefundRequest.objects.filter(order=order).exists():
+            RefundRequest.objects.create(
+                order=order,
+                user=request.user,
+                reason=reason
+            )
+            messages.success(request, "Refund request submitted successfully!")
+        else:
+            messages.error(request, "A refund request for this order already exists.")
+        return redirect('shop:order_list')
+    return render(request, 'shop/request_refund.html', {'order': order})
+
+
 
 # View for ongoing (live) auctions
 def auction_list(request):

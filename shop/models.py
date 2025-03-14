@@ -418,3 +418,28 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"Chat about {self.product.name} from {self.sender} to {self.receiver}"
+    
+
+
+class RefundRequest(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    )
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='refund_requests')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='refund_requests')
+    reason = models.TextField(max_length=500, help_text="Reason for refund request")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    admin_notes = models.TextField(max_length=500, blank=True, null=True, help_text="Notes from admin on approval/rejection")
+
+    class Meta:
+        verbose_name = "Refund Request"
+        verbose_name_plural = "Refund Requests"
+        indexes = [models.Index(fields=['status', 'created_at'])]
+
+    def __str__(self):
+        return f"Refund #{self.id} for Order #{self.order.id} - {self.status}"

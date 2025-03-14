@@ -19,6 +19,8 @@ urlpatterns = [
     path('contact/', contact, name='contact'),
     path('about/', about, name='about'),
     path('orders/', order_list, name='order_list'),
+    path('order/<int:order_id>/refund/', request_refund, name='request_refund'),
+
     path('search/', search_view, name="search"),
 
     path('auctions/live/', auction_list, name='auction_list'),

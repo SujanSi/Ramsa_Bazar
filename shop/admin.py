@@ -93,3 +93,23 @@ class BidAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('auction__product', 'bidder')
+    
+
+
+@admin.register(RefundRequest)
+class RefundRequestAdmin(admin.ModelAdmin):
+    list_display = ('id', 'order', 'user', 'status', 'created_at', 'updated_at')
+    list_filter = ('status', 'created_at')
+    search_fields = ('order__id', 'user__email', 'reason')
+    list_editable = ('status',)  # Allow status to be edited directly in the list view
+    actions = ['approve_refund_requests', 'reject_refund_requests']
+
+    def approve_refund_requests(self, request, queryset):
+        updated = queryset.update(status='approved')
+        self.message_user(request, f"{updated} refund request(s) successfully approved.")
+    approve_refund_requests.short_description = "Approve selected refund requests"
+
+    def reject_refund_requests(self, request, queryset):
+        updated = queryset.update(status='rejected')
+        self.message_user(request, f"{updated} refund request(s) successfully rejected.")
+    reject_refund_requests.short_description = "Reject selected refund requests"

@@ -9,6 +9,12 @@
         background: #eaedf2;
         font-family: 'Poppins', sans-serif;
     }
+        .badge-rejected {
+            background-color: #dc3545; /* Red for rejected */
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
 
     .order-container {
         background: #aab6ca;
@@ -132,11 +138,12 @@
             font-weight: 500;
             margin-right: 1rem;
         }
+        
     }
 </style>
 
 <div class="order-container">
-    <h1 class="order-title text-center mb-4">📦 Order History</h1>
+    <h1 class="order-title mb-4">📦 Order History</h1>
 <!-- Display messages -->
             {% if messages %}
             <div class="messages">
@@ -158,6 +165,7 @@
                         <th>Total</th>
                         <th>Status</th>
                         <th>Date</th>
+                        <th>Refund Status</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -176,6 +184,24 @@
                                 </span>
                             </td>
                             <td data-label="Date">{{ order.created_at|date:"M d, Y" }}</td>
+                            <td data-label="Refund Status">
+                                {% if order.refund_requests.exists %}
+                                    {% with refund=order.refund_requests.first %}
+                                        <span class="status-badge 
+                                            {% if refund.status == 'pending' %}badge-pending
+                                            {% elif refund.status == 'approved' %}badge-delivered
+                                            {% elif refund.status == 'rejected' %}badge-rejected{% endif %}">
+                                            {{ refund.get_status_display }}
+                                        </span>
+                                    {% endwith %}
+                                {% else %}
+                                    {% if order.status == 'delivered' %}
+                                        <a href="{% url 'shop:request_refund' order.id %}" class="btn btn-sm btn-warning">Request Refund</a>
+                                    {% else %}
+                                        <span>-</span>
+                                    {% endif %}
+                                {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

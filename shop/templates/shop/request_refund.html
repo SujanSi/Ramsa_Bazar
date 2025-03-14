@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block container %}
+<div class="refund-container">
+    <h1 class="text-center mb-4">Request Refund for Order #{{ order.id }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="reason">Reason for Refund:</label>
+            <textarea class="form-control" id="reason" name="reason" rows="4" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Submit Refund Request</button>
+    </form>
+</div>
+{% endblock container %}
