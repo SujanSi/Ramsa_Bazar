@@ -98,27 +98,52 @@ def search_view(request):
     return render(request, 'shop/search.html', context)
 
 
-
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id, status='approved')
     reviews = Reviews.objects.filter(product=product).order_by('-created_at')
 
-    if request.method == 'POST':
-        form = ReviewForm(request.POST)
-        if form.is_valid():
-            # Save the new review
-            review = form.save(commit=False)
-            review.product = product  # Associate the review with the product
-            review.save()
-            return redirect('shop:product_detail', product_id=product.id)
-    else:
-        form = ReviewForm()
+    # Initialize variables
+    has_purchased = False
+    form = ReviewForm()
+
+    # Check if the user is logged in
+    if request.user.is_authenticated:
+        # Check if the user has purchased the product
+        has_purchased = Order.objects.filter(user=request.user, product=product).exists()
+
+        if request.method == 'POST':
+            if not has_purchased:
+                # If the user hasn't purchased the product, show an error message
+                return render(request, 'shop/product-detail.html', {
+                    'product': product,
+                    'reviews': reviews,
+                    'form': form,
+                    'error_message': 'You must purchase this product before submitting a review.',
+                })
+
+            form = ReviewForm(request.POST)
+            if form.is_valid():
+                # Save the new review
+                review = form.save(commit=False)
+                review.product = product  # Associate the review with the product
+                review.user = request.user  # Associate the review with the logged-in user
+                review.save()
+                return redirect('shop:product_detail', product_id=product.id)
+        else:
+            # Pre-fill the form with the logged-in user's name and email
+            initial_data = {
+               'name': request.user.full_name,
+                'email': request.user.email,
+            }
+            form = ReviewForm(initial=initial_data)
 
     return render(request, 'shop/product-detail.html', {
         'product': product,
         'reviews': reviews,
         'form': form,
-        })
+        'has_purchased': has_purchased,  # Pass this to the template to conditionally display the form
+        'user_is_authenticated': request.user.is_authenticated,  # Pass this to check if the user is logged in
+    })
 
 @check_blacklisted
 @login_required

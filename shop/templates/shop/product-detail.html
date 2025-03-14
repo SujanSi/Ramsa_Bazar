@@ -232,23 +232,32 @@
                                                         <div class="rev-f2__group">
                                                                                             <!-- Review Form -->
                                 <!-- Review Form -->
-                                <div class="rev-f2__group">
-                                    <form method="POST" class="pd-tab__rev-f1">
-                                        {% csrf_token %}
-                                        <div class="u-s-m-b-15">
-                                            <label class="gl-label" for="reviewer-text">YOUR REVIEW *</label>
-                                            <textarea name="comment" class="text-area text-area--primary-style" id="reviewer-text" required></textarea>
+                                        <div class="rev-f2__group">
+                                            {% if user_is_authenticated %}
+                                                {% if has_purchased %}
+                                                    <form method="POST" class="pd-tab__rev-f1">
+                                                        {% csrf_token %}
+                                                        <div class="u-s-m-b-15">
+                                                            <label class="gl-label" for="reviewer-text">YOUR REVIEW *</label>
+                                                            <textarea name="comment" class="text-area text-area--primary-style" id="reviewer-text" required></textarea>
+                                                        </div>
+                                                        <div class="u-s-m-b-15">
+                                                            <label class="gl-label" for="reviewer-name">NAME *</label>
+                                                            <input class="input-text input-text--primary-style" type="text" id="reviewer-name" name="name" value="{{ user.full_name }}" readonly required>
+                                                        </div>
+                                                        <div class="u-s-m-b-15">
+                                                            <label class="gl-label" for="reviewer-email">EMAIL *</label>
+                                                            <input class="input-text input-text--primary-style" type="email" id="reviewer-email" name="email" value="{{ user.email }}" readonly required>
+                                                        </div>
+                                                        <button class="btn btn--e-brand-shadow" type="submit">SUBMIT</button>
+                                                    </form>
+                                                {% else %}
+                                                    <p class="u-s-m-b-15">You must purchase this product to submit a review.</p>
+                                                {% endif %}
+                                            {% else %}
+                                                <p class="u-s-m-b-15"><a href="{% url 'core:login' %}">Log in</a> to check if you can review this product.</p>
+                                            {% endif %}
                                         </div>
-                                        <div class="u-s-m-b-15">
-                                            <label class="gl-label" for="reviewer-name">NAME *</label>
-                                            <input class="input-text input-text--primary-style" type="text" id="reviewer-name" name="name" required>
-                                        </div>
-                                        <div class="u-s-m-b-15">
-                                            <label class="gl-label" for="reviewer-email">EMAIL *</label>
-                                            <input class="input-text input-text--primary-style" type="email" id="reviewer-email" name="email" required>
-                                        </div>
-                                        <button class="btn btn--e-brand-shadow" type="submit">SUBMIT</button>
-                                    </form>
                                 </div>
                             </div>
                         </div>

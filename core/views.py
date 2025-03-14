@@ -150,8 +150,12 @@ def user_login(request):
                 return redirect('dashboard:vendor_dashboard')  # Redirect to vendor dashboard
             elif user.role == 'superadmin':
                 return redirect('admin:index')  # Redirect to superadmin dashboard
+            elif user.role == 'user':
+                return redirect('shop:home')  # Redirect regular users to the home page
             else:
-                return redirect('shop:home')
+                # Handle any other roles (if they exist)
+                messages.error(request, "Unknown user role. Please contact support.")
+                return redirect('core:login')
 
         else:
             # Log failed login attempt

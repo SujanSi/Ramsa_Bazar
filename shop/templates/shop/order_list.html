@@ -164,6 +164,7 @@
                         <th>Quantity</th>
                         <th>Total</th>
                         <th>Status</th>
+                        <th>Payment method</th>
                         <th>Date</th>
                         <th>Refund Status</th>
                     </tr>
@@ -183,6 +184,7 @@
                                     {{ order.get_status_display }}
                                 </span>
                             </td>
+                            <td>{{order.payment_method}}</td>
                             <td data-label="Date">{{ order.created_at|date:"M d, Y" }}</td>
                             <td data-label="Refund Status">
                                 {% if order.refund_requests.exists %}

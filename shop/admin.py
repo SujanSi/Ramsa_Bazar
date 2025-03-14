@@ -67,6 +67,12 @@ class AuctionAdmin(admin.ModelAdmin):
     actions = ['approve_auctions', 'reject_auctions']
     list_per_page = 20
     
+    fieldsets = (
+        (None, {
+            'fields': ('product', 'start_time', 'end_time', 'starting_bid', 'highest_bid', 'highest_bidder', 'is_active')
+        }),
+    )
+
     def time_left(self, obj):
         return obj.time_left()
     time_left.short_description = 'Time Remaining'

@@ -44,6 +44,7 @@
                                                     <th>Time Left</th>
                                                 {% endif %}
                                         <th>Image</th>
+                                        <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -68,6 +69,15 @@
                                             {% else %}
                                             <span class="text-muted">N/A</span>
                                             {% endif %}
+                                        </td>
+                                        <td>
+                                            <!-- Display product status with a badge -->
+                                            <span class="badge 
+                                                {% if product.status == 'pending' %}bg-warning
+                                                {% elif product.status == 'approved' %}bg-success
+                                                {% elif product.status == 'rejected' %}bg-danger{% endif %}">
+                                                {{ product.get_status_display }}
+                                            </span>
                                         </td>
                                         <td class="text-start">
                                             <div class="d-flex gap-2">
