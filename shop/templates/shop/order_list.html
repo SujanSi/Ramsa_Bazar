@@ -220,7 +220,53 @@
             </a>
         </div>
     {% endif %}
-</div>
 
+
+
+   <!-- Auction History Section -->
+   <h2 class="mb-3 mt-5">Auction History</h2>
+   {% if auctions %}
+       <div class="table-responsive">
+           <table class="auction-table table">
+               <thead class="table-header">
+                   <tr>
+                       <th>Product</th>
+                       <th>Start Time</th>
+                       <th>End Time</th>
+                       <th>Your Highest Bid</th>
+                       <th>Status</th>
+                   </tr>
+               </thead>
+               <tbody>
+                   {% for data in auctions %}
+                       <tr class="table-row">
+                           <td data-label="Product">{{ data.auction.product.name }}</td>
+                           <td data-label="Start Time">{{ data.auction.start_time|date:"M d, Y H:i" }}</td>
+                           <td data-label="End Time">{{ data.auction.end_time|date:"M d, Y H:i" }}</td>
+                           <td data-label="Your Highest Bid">रु {{ data.user_highest_bid }}</td>
+                           <td data-label="Status">
+                               <span class="status-badge 
+                                   {% if data.auction.is_active %}badge-active
+                                   {% else %}badge-ended{% endif %}">
+                                   {% if data.auction.is_active %}Active{% else %}Ended{% endif %}
+                               </span>
+                           </td>
+                       </tr>
+                   {% endfor %}
+               </tbody>
+           </table>
+       </div>
+   {% else %}
+       <div class="empty-state text-center py-5">
+           <div class="mb-4">
+               <i class="fas fa-gavel fa-3x text-475569"></i>
+           </div>
+           <p class="mb-4">You have not participated in any auctions yet.</p>
+           <a href="{% url 'shop:auction_list' %}" class="btn detail-btn rounded-pill px-4">
+               <i></i> 🛒View Auctions
+           </a>
+       </div>
+   {% endif %}
+</div>
 <script src="https://kit.fontawesome.com/your-kit-code.js"></script>
 {% endblock container %}

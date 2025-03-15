@@ -6,20 +6,100 @@ from django.contrib.auth import update_session_auth_hash
 from shop.models import Product
 from .forms import ProductForm
 from django.urls import reverse
-
+from shop.custom_decorator import check_blacklisted
+from datetime import timedelta
+from django.utils import timezone
+from django.db.models.functions import TruncDate
+from django.db.models import Count, Sum, F, ExpressionWrapper, fields
 
 # Create your views here.
 @login_required
 def vendor_dashboard(request):
-    return render(request, 'dashboard/home.html')
+    # Ensure the user is a vendor
+    if not request.user.is_authenticated or request.user.role != 'vendor':
+        return render(request, 'dashboard/access_denied.html')
+
+    # Get the vendor's products
+    vendor_products = Product.objects.filter(vendor=request.user)
+
+    # Total Products
+    total_products = vendor_products.count()
+
+    # Auction Products
+    auction_products = vendor_products.filter(product_type='auction').count()
+
+    # Total Revenue
+    total_revenue = (
+        Order.objects
+        .filter(product__in=vendor_products)
+        .aggregate(total_revenue=Sum('total_price'))
+        .get('total_revenue', 0) or 0
+    )
+
+    # Total Sales
+    total_sales = Order.objects.filter(product__in=vendor_products).count()
+
+    # Sales Trends: Total sales per day for the last 7 days
+    sales_trends = (
+        Order.objects
+        .filter(product__in=vendor_products, created_at__gte=timezone.now() - timedelta(days=7))
+        .annotate(date=TruncDate('created_at'))
+        .values('date')
+        .annotate(total_sales=Sum('total_price'))
+        .order_by('date')
+    )
+
+    # Convert sales_trends to a JSON-serializable format
+    sales_trends_data = [
+        {
+            'date': trend['date'].strftime("%Y-%m-%d"),  # Convert date to string
+            'total_sales': float(trend['total_sales'])   # Ensure Decimal is converted to float
+        }
+        for trend in sales_trends
+    ]
+
+    # Auction Performance: Total bids per product
+    auction_performance = (
+        Auction.objects
+        .filter(product__in=vendor_products)
+        .annotate(total_bids=Count('bids'))
+        .values('product__name', 'total_bids')
+    )
+
+    # Convert auction_performance to a JSON-serializable format
+    auction_performance_data = list(auction_performance)
+
+    # Active Buyers: Users who placed the most orders
+    active_buyers = (
+        Order.objects
+        .filter(product__in=vendor_products)
+        .values('user__email')
+        .annotate(total_orders=Count('id'))
+        .order_by('-total_orders')[:10]  # Top 10 active buyers
+    )
+
+    # Convert active_buyers to a JSON-serializable format
+    active_buyers_data = list(active_buyers)
+
+    context = {
+        "total_products": total_products,
+        "auction_products": auction_products,
+        "total_revenue": total_revenue,
+        "total_sales": total_sales,
+        "sales_trends": json.dumps(sales_trends_data),  # Use the serializable data
+        "auction_performance": json.dumps(auction_performance_data),  # Use the serializable data
+        "active_buyers": json.dumps(active_buyers_data),  # Use the serializable data
+    }
+    return render(request, 'dashboard/home.html', context)
 
 
 @login_required
+@check_blacklisted
 def profile(request):
     user = request.user
     return render(request, 'dashboard/profile.html', {'user': user})
 
-
+@check_blacklisted
 @login_required
 def profile_edit(request):
     user = request.user
@@ -51,7 +131,7 @@ def change_password(request):
         form = CustomPasswordChangeForm(user=request.user)
     return render(request, 'dashboard/change_password.html', {'form': form})
 
-
+@check_blacklisted
 @login_required
 def vendor_products(request):
     # Check if user is a vendor and KYC verified
@@ -78,6 +158,7 @@ def vendor_products(request):
 
 from .forms import AuctionProductForm
 from shop.models import Auction
+@check_blacklisted
 @login_required
 def add_product(request):
     # Check if user is a vendor and KYC verified
@@ -119,7 +200,7 @@ def add_product(request):
     return render(request, 'dashboard/add_product.html', context)
 
 
-
+@check_blacklisted
 @login_required
 def edit_product(request, product_id):
     # Check if user is a vendor and KYC verified
@@ -127,7 +208,7 @@ def edit_product(request, product_id):
         return render(request, 'dashboard/access_denied.html', {
             'message': 'Only KYC-verified vendors can edit products.'
         })
-
+@check_blacklisted
 @login_required
 def edit_product(request, product_id):
     # Check if user is a vendor and KYC verified
@@ -206,7 +287,7 @@ def remove_product(request, product_id):
 
 from shop.models import ChatMessage
 @login_required
-
+@check_blacklisted
 def vendor_messages(request):
     # Check if user is a vendor and KYC verified
     if request.user.role != 'vendor' or not request.user.kyc_verified:
@@ -232,6 +313,7 @@ def vendor_messages(request):
 
 from django.db.models import Q
 @login_required
+@check_blacklisted
 def reply_message(request, message_id):
     # Get the original message
     original_message = get_object_or_404(ChatMessage, id=message_id, receiver=request.user)
@@ -275,7 +357,7 @@ from django.core.mail import send_mail
 
 
 logger = logging.getLogger(__name__)
-
+@check_blacklisted
 @login_required
 def vendor_orders(request):
     """
@@ -399,3 +481,8 @@ def message(request):
 
 def notification(request):
     return render(request, 'dashboard/notification.html')
+
+
+from shop.models import Order, Product, Auction, Bid
+from django.db.models import Count, Sum 
+import json

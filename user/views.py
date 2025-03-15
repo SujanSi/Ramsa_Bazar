@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from .forms import KYCForm
+from .forms import KYCForm,UserProfileForm
 from .models import KYCVerification
 from django.contrib.auth.decorators import login_required
 
@@ -36,6 +36,36 @@ def kyc_verification(request):
         form = KYCForm()
 
     return render(request, 'user/kyc_verification.html', {'form': form})
+
+
+
+
+@login_required
+def profile(request):
+    user = request.user
+    return render(request, 'user/profile.html', {
+        'user': user,
+    })
+
+
+@login_required
+def edit_profile(request):
+    user = request.user
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Your profile has been updated successfully!')
+            return redirect('customer:profile')  # Redirect to the profile page after saving
+    else:
+        form = UserProfileForm(instance=user)
+
+    return render(request, 'user/edit_profile.html', {
+        'form': form,
+    })
+
+
 
 
 

@@ -33,10 +33,10 @@ def home(request):
         is_active=True,
         start_time__lte=timezone.now(),
         end_time__gt=timezone.now(),
-        status='approved',
         product__status='approved'
     ).select_related('product').order_by('end_time')[:2]
-
+    print("---------")
+    print(auctions)
 
 # Fetch the latest upcoming auction
     upcoming_auction = Auction.objects.filter(
@@ -572,11 +572,33 @@ def contact(request):
                 return redirect("shop:home")  
      return render(request, 'contact.html',{"form": form})
 
-
+from django.db.models import Max
 @login_required
 def order_list(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'shop/order_list.html', {'orders': orders})
+
+    # Fetch auction participation history
+    auction_data = (
+        Bid.objects
+        .filter(bidder=request.user)  # Filter bids by the logged-in user
+        .select_related('auction', 'auction__product')  # Optimize query by joining with Auction and Product
+        .values('auction')  # Group by auction
+        .annotate(user_highest_bid=Max('amount'))  # Get the highest bid for each auction
+        .order_by('-auction__end_time')  # Order by auction end time
+    )
+
+    # Fetch full auction details for each unique auction
+    auctions = []
+    for data in auction_data:
+        auction = Auction.objects.get(id=data['auction'])
+        auctions.append({
+            'auction': auction,
+            'user_highest_bid': data['user_highest_bid'],
+        })
+    return render(request, 'shop/order_list.html', {
+        'orders': orders,
+        'auctions': auctions,  # Pass the full auction data to the template
+    })
 
 @login_required
 def request_refund(request, order_id):

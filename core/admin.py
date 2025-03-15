@@ -22,7 +22,6 @@ class CustomUserAdmin(UserAdmin):
         (None, {'fields': ('email', 'password')}),
         ('Personal Info', {'fields': ('full_name', 'phone')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'role', 'groups', 'user_permissions', 'is_blacklisted')}),
-        ('KYC', {'fields': ('kyc_verified',)}),
     )
 
     # Override add_fieldsets for the "Add" form in admin
