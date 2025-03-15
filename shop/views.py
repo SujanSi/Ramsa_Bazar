@@ -197,6 +197,7 @@ def category_products(request, category_id):
 def get_cart(user):
     """Retrieve or create a cart for the user."""
     cart, created = Cart.objects.get_or_create(user=user)
+    
     return cart
 
 @check_blacklisted
@@ -222,6 +223,8 @@ def add_to_cart(request, product_id):
         else:
             cart_item.quantity = quantity
         cart_item.save()
+        messages.success(request, "Product added to cart successfully!")
+
 
         return redirect('shop:cart') 
 

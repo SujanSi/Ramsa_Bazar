@@ -25,7 +25,7 @@
                         {% if products_by_category %}
                             {% for category_name, products in products_by_category.items %}
                                 <div class="shop-p__category-section u-s-m-b-30">
-                                    <h3 class="category-title">Category Name :{{ category_name }}:</h3>
+                                    <h3 class="category-title text-center fw-bold text-dark">Category Name:- {{ category_name }}</h3>
                                     <div class="shop-p__collection">
                                         <div class="row is-grid-active">
                                             {% for product in products %}

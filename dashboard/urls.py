@@ -15,7 +15,6 @@ urlpatterns = [
     path('vendor/orders/',vendor_orders, name='vendor_orders'),
     path('vendor/order/<int:order_id>/update/',vendor_order_update, name='vendor_order_update'),
     path('message/', message, name = 'message'),
-    path('notification/', notification, name = 'notification'),
 
     path('messages/',vendor_messages, name='vendor_messages'),
     path('messages/reply/<int:message_id>/', reply_message, name='reply_message'),

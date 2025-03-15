@@ -478,11 +478,3 @@ def vendor_order_update(request, order_id):
         
 def message(request):
     return render(request, 'dashboard/message.html')
-
-def notification(request):
-    return render(request, 'dashboard/notification.html')
-
-
-from shop.models import Order, Product, Auction, Bid
-from django.db.models import Count, Sum 
-import json

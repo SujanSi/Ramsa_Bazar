@@ -12,9 +12,6 @@ urlpatterns = [
     path('reset-password/<uidb64>/<token>/',reset_password, name='reset_password'),
     path('check-mail/', check_mail, name='check_mail'),
 
-    # path('password-reset/', password_reset_request, name='password_reset'),
-    # path('reset/<uidb64>/<token>/', password_reset_confirm, name='password_reset_confirm'),
-    # path('password-reset-done', password_reset_done, name='password_reset_done'),
     path('check_email/', check_email, name='check_email'),
     path('logout/', user_logout, name='logout'),
     path('dashboard/', dashboard_redirect, name='dashboard_redirect'),

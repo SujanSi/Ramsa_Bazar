@@ -1982,8 +1982,8 @@ input::-ms-clear {
 
 .main-search-button {
   position: absolute;
-  top: 50%;
-  right: 15px;
+  top: 68%;
+  right: 10px;
   -webkit-transform: translateY(-50%);
           transform: translateY(-50%);
   font-size: 18px; }
