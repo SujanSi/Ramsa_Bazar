@@ -1,7 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 from django.db import models
 from django.utils.timezone import now
-
+from shop.models import Auction
 
 
 class CustomUserManager(BaseUserManager):
@@ -66,3 +66,33 @@ class SecurityLog(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.event_type} at {self.timestamp}"
+
+class SalesReport(CustomUser):  # Inherit from CustomUser
+    class Meta:
+        proxy = True  # Mark this as a proxy model
+        verbose_name = "Sales Report"
+        verbose_name_plural = "Sales Reports"
+        app_label = "core"  # Group under the 'core' app
+
+    def __str__(self):
+        return "Sales Report"
+
+class UserEngagementReport(CustomUser):  # Inherit from CustomUser
+    class Meta:
+        proxy = True  # Mark this as a proxy model
+        verbose_name = "User Engagement Report"
+        verbose_name_plural = "User Engagement Reports"
+        app_label = "core"  # Group under the 'core' app
+
+    def __str__(self):
+        return "User Engagement Report"
+    
+class AuctionPerformance(Auction):
+    class Meta:
+        proxy = True  # Mark this as a proxy model
+        verbose_name = "Auction Performance"
+        verbose_name_plural = "Auction Performance Reports"
+        app_label = "core"  # Group under the 'core' app
+
+    def __str__(self):
+        return "Auction Performance Report"
