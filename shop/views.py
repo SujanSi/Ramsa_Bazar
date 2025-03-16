@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from django.shortcuts import render,get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -10,7 +12,15 @@ from django.db.models import Q
 from django.db.models import Count
 from .custom_decorator import check_blacklisted
 
-# Create your views here.
+
+
+
+# Load environment variables
+load_dotenv()
+
+# Retrieve the Khalti secret key
+KHALTI_SECRET_KEY = os.getenv('KHALTI_SECRET_KEY')
+
 now = timezone.now()
 
 def home(request):
@@ -416,7 +426,7 @@ def place_order(request):
             }
 
             headers = {
-                'Authorization': 'Key 28808af5b2f74228b7da6ba0a27b1e7e',  # Replace with your Khalti secret key
+                'Authorization': f'Key {KHALTI_SECRET_KEY}',  # Corrected to a string
                 'Content-Type': 'application/json',
             }
 
