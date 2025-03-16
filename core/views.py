@@ -173,70 +173,9 @@ def user_login(request):
 
 
 
-# def password_reset_request(request):
-#     if request.method == "POST":
-#         form = PasswordResetForm(request.POST)
-#         if form.is_valid():
-#             email = form.cleaned_data["email"]
-#             user = get_user_model().objects.filter(email=email).first()
-            
-#             if user and user == request.user:  # Check if the email matches the logged-in user
-#                 # Generate password reset token and send email
-#                 token = default_token_generator.make_token(user)
-#                 uid = urlsafe_base64_encode(str(user.pk).encode())
-#                 reset_link = request.build_absolute_uri(
-#                     f"/accounts/reset/{uid}/{token}/"  # Make sure this matches your URL pattern
-#                 )
-#                 subject = "Password Reset Request"
-#                 message = f"Click the link to reset your password: {reset_link}"
-#                 send_mail(subject, message, "admin@mywebsite.com", [email])
-#                 messages.success(request, "Password reset email sent.")
-#                 return redirect('user:password_reset_done')
-            
-#             else:
-#                 messages.error(request, "This email is not associated with the logged-in user.")
-#                 return redirect('login')  # Optional: you can return an error message
-        
-#     else:
-#         form = PasswordResetForm()
-
-#     return render(request, "user/lost-password.html", {"form": form})
-
-
-# from django.contrib.auth.forms import SetPasswordForm
-# from django.contrib.auth.tokens import default_token_generator
-
-# def password_reset_confirm(request, uidb64, token):
-#     try:
-#         # Decode the UID
-#         uid = urlsafe_base64_decode(uidb64).decode()
-#         user = get_user_model().objects.get(pk=uid)
-
-#         # Check the token
-#         if default_token_generator.check_token(user, token):
-#             if request.method == 'POST':
-#                 form = SetPasswordForm(user, request.POST)
-#                 if form.is_valid():
-#                     form.save()
-#                     messages.success(request, "Password has been reset successfully.")
-#                     return redirect('user:login')
-#             else:
-#                 form = SetPasswordForm(user)
-#             return render(request, 'user/password_reset_confirm.html', {'form': form})
-#         else:
-#             messages.error(request, "The password reset link is invalid or expired.")
-#             return redirect('user:login')
-#     except Exception as e:
-#         messages.error(request, "The password reset link is invalid or expired.")
-#         return redirect('user:login')
-
-
 def check_email(request):
     return render(request, 'core/check_email.html')
 
-
-# def password_reset_done(request):
-#     return render(request, 'user/password_reset_done.html')
 
 def user_logout(request):
     logout(request)
