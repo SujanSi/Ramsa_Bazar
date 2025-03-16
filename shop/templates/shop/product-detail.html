@@ -115,7 +115,7 @@
                                 </ul>
                             </div>
                             <div class="u-s-m-b-15">
-                                <form class="pd-detail__form" method="POST" action="{% url 'shop:add_to_cart' product.id %}">
+                                <form class="pd-detail__form" method="POST" action="{% url 'shop:add_to_cart' product.id %}" id="add-to-cart-form">
                                     {% csrf_token %}
                                         <div class="pd-detail-inline-2">
                                             <div class="u-s-m-b-15">
@@ -390,5 +390,34 @@
 
     })(jQuery);
 </script>
+
+<script>
+    document.getElementById("add-to-cart-form").onsubmit = function(event) {
+        event.preventDefault();
+    
+        // Submit form via AJAX to prevent immediate redirect
+        fetch(this.action, {
+            method: "POST",
+            body: new FormData(this),
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+            }
+        }).then(response => {
+            if (response.ok) {
+                // Show success message using SweetAlert
+                Swal.fire({
+                    title: "Success!",
+                    text: "Item added to cart!",
+                    icon: "success",
+                    showConfirmButton: false,
+                    timer: 1000  // Display message for 5 seconds
+                }).then(() => {
+                    window.location.href = "{% url 'shop:cart' %}"; // Redirect to cart after the message
+                });
+            }
+        });
+    };
+    </script>
+    
 </body>
 {% endblock container %}

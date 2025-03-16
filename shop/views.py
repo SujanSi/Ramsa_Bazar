@@ -223,7 +223,7 @@ def add_to_cart(request, product_id):
         else:
             cart_item.quantity = quantity
         cart_item.save()
-        messages.success(request, "Product added to cart successfully!")
+        # messages.success(request, f"{product.name} has been added to your cart.")
 
 
         return redirect('shop:cart') 
