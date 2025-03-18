@@ -28,7 +28,7 @@ def home(request):
 
     # Get products added in the last 30 days
     time_threshold = now - timedelta(days=30)
-    new_arrival = Product.objects.filter(created_at__gte=time_threshold, status='approved')
+    new_arrival = Product.objects.filter(created_at__gte=time_threshold, status='approved', product_type = "selling")
 
     # Get only selling products
     selling_products = Product.objects.filter(product_type='selling', status='approved')
@@ -426,7 +426,7 @@ def place_order(request):
             }
 
             headers = {
-                'Authorization': f'Key {KHALTI_SECRET_KEY}',  # Corrected to a string
+                 'Authorization': 'Key 28808af5b2f74228b7da6ba0a27b1e7e',  # Corrected to a string
                 'Content-Type': 'application/json',
             }
 
