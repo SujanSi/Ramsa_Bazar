@@ -234,10 +234,9 @@ def add_to_cart(request, product_id):
             cart_item.quantity = quantity
         cart_item.save()
         # messages.success(request, f"{product.name} has been added to your cart.")
+        cart_count = CartItem.objects.filter(cart=cart).count()
 
-
-        return redirect('shop:cart') 
-
+        return JsonResponse({"status": "success", "cart_count": cart_count})
     return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
 
 @check_blacklisted

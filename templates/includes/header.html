@@ -198,6 +198,9 @@
             <li>
                 <a href="{% url 'shop:cart' %}">
                     <i class="fas fa-shopping-cart u-s-m-r-6"></i>MY CART
+                    <span id="cart-count" class="badge" style="background-color: #ff6200; color: #fff; padding: 5px; border-radius: 5px;">
+                        {% if cart_count %}{{ cart_count }}{% else %}0{% endif %}
+                    </span>
                 </a>
             </li>
             <li>

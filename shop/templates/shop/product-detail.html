@@ -389,9 +389,8 @@
         });
 
     })(jQuery);
-</script>
 
-<script>
+
     document.getElementById("add-to-cart-form").onsubmit = function(event) {
         event.preventDefault();
     
@@ -402,21 +401,39 @@
             headers: {
                 "X-Requested-With": "XMLHttpRequest",
             }
-        }).then(response => {
-            if (response.ok) {
+        })
+        .then(response => response.json())  // Parse the JSON response
+        .then(data => {
+            if (data.status === "success") {
                 // Show success message using SweetAlert
                 Swal.fire({
                     title: "Success!",
                     text: "Item added to cart!",
                     icon: "success",
                     showConfirmButton: false,
-                    timer: 1000  // Display message for 5 seconds
+                    timer: 1000  // Display message for 1 second
                 }).then(() => {
+                    // Update the cart count in the navigation bar
+                    const cartCountElement = document.getElementById("cart-count");
+                    if (cartCountElement) {
+                        cartCountElement.textContent = data.cart_count;  // Use the cart_count from the response
+                    }
+                });
+            } else if (data.status === "error") {
+                Swal.fire({
+                    title: "Error!",
+                    text: data.message,
+                    icon: "error",
+                    showConfirmButton: false,
+                    timer: 1000
                 });
             }
+        })
+        .catch(error => {
+            console.error("Error:", error);
         });
     };
-    </script>
+</script>
     
 </body>
 {% endblock container %}

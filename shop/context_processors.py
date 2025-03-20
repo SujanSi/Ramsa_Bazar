@@ -1,11 +1,18 @@
 from .models import Category, Notification
 from django.utils import timezone
-from shop.models import Auction
+from shop.models import Auction,Cart,CartItem
 
 
 def category_context(request):
     categories = Category.objects.all().order_by('name')
     return {'categories': categories}
+
+def cart_count(request):
+    cart_count = 0
+    if request.user.is_authenticated:
+        cart, created = Cart.objects.get_or_create(user=request.user)
+        cart_count = CartItem.objects.filter(cart=cart).count()
+    return {"cart_count": cart_count}
 
 
 def notification_count(request):
