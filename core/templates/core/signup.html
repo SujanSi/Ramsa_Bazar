@@ -1,7 +1,32 @@
 {% extends 'base.html' %}
 {% load static %}
 {% block container %}
+<style>
+    /* Blue Button Style */
+.btn--blue {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    font-size: 16px;
+    padding: 10px 20px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 5px;
+}
 
+.btn--blue:hover {
+    background-color: #0056b3;
+}
+
+/* Full Width Button */
+.btn--full-width {
+    width: 100%;
+    display: block; /* Ensures full width takes effect */
+    margin: 0 auto; /* Optional: Center the button if needed */
+    padding: 15px;
+}
+
+</style>
         <div class="app-content">
 
             <!--====== Section 1 ======-->
@@ -14,10 +39,8 @@
                             <div class="breadcrumb__wrap">
                                 <ul class="breadcrumb__list">
                                     <li class="has-separator">
-
                                         <a href="index.html">Home</a></li>
                                     <li class="is-marked">
-
                                         <a href="signup.html">Signup</a></li>
                                 </ul>
                             </div>
@@ -53,7 +76,7 @@
                             <div class="col-lg-6 col-md-8 u-s-m-b-30">
                                 <div class="l-f-o">
                                     <div class="l-f-o__pad-box">
-                                        <h1 class="gl-h1">PERSONAL INFORMATION</h1>
+                                        <h1 class="gl-h1">Registration</h1>
                                         <form class="l-f-o__form" method="post">
                                             {% csrf_token %}
                                             <!-- Display error messages -->
@@ -94,12 +117,20 @@
                                                 <option value="vendor">Vendor</option>
                                             </select>
                                             <br><br>
+                                            
+                                            <!-- Terms & Conditions checkbox -->
+                                            <div class="mb-3">
+                                                <label class="gl-label">
+                                                    <input type="checkbox" name="terms" required> I accept all <a href="#">terms & conditions</a>
+                                                </label>
+                                            </div>
+
                                             <!-- Replaced fields end here -->
                                             <div class="u-s-m-b-15">
+                                                <button class="btn btn--blue btn--full-width" type="submit">Register Now</button>
+                                            </div>
 
-                                                <button class="btn btn--e-transparent-brand-b-2" type="submit">CREATE</button></div>
-
-                                            <a class="gl-link" href="{% url 'shop:home' %}">Return to Store</a>
+                                            <a class="gl-link" href="{% url 'core:login' %}">Already have an account?</a>
                                         </form>
                                     </div>
                                 </div>
