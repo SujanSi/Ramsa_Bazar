@@ -11,8 +11,10 @@ from datetime import timedelta
 from django.utils import timezone
 from django.db.models.functions import TruncDate
 from django.db.models import Count, Sum, F, ExpressionWrapper, fields
+import json
 
 # Create your views here.
+@check_blacklisted
 @login_required
 def vendor_dashboard(request):
     # Ensure the user is a vendor
