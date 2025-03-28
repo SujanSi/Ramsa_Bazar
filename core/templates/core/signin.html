@@ -51,16 +51,10 @@
                     <div class="col-lg-6 col-md-8 u-s-m-b-30">
                         <div class="l-f-o">
                             <div class="l-f-o__pad-box">
-
-                                <!-- Signup Call to Action -->
-                                <h1 class="gl-h1">I'M A NEW CUSTOMER</h1>
-                                <span class="gl-text u-s-m-b-30">
-                                    By creating an account with our store, you will be able to move through the checkout process faster, store shipping addresses, view and track your orders, and more.
-                                </span>
-                                <div class="u-s-m-b-15">
-                                    <a class="l-f-o__create-link btn--e-transparent-brand-b-2" href="{% url 'core:register' %}">
-                                        CREATE AN ACCOUNT
-                                    </a>
+<br>
+                                <!-- Signup Button below Login -->
+                                <div class="u-s-m-b-30">
+                                    <a class="btn btn--e-transparent-brand-b-2" href="{% url 'core:register' %}" style="width: 100%;">CREATE AN ACCOUNT</a>
                                 </div>
 
                                 <!-- Login Form -->
@@ -113,6 +107,7 @@
                                         <a class="gl-link" href="{% url 'core:forgot_password' %}">Lost Your Password?</a>
                                     </div>
                                 </form>
+                                 
                             </div>
                         </div>
                     </div>

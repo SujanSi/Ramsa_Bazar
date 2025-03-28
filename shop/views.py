@@ -115,11 +115,23 @@ def product_detail(request, product_id):
     # Initialize variables
     has_purchased = False
     form = ReviewForm()
+    initial_quantity = 1
 
     # Check if the user is logged in
     if request.user.is_authenticated:
         # Check if the user has purchased the product
         has_purchased = Order.objects.filter(user=request.user, product=product).exists()
+
+
+# Check if product is in cart and get current quantity
+        try:
+            cart = Cart.objects.get(user=request.user)
+            cart_item = CartItem.objects.filter(cart=cart, product=product).first()
+            if cart_item:
+                initial_quantity = cart_item.quantity
+        except Cart.DoesNotExist:
+            pass
+
 
         if request.method == 'POST':
             if not has_purchased:
@@ -129,6 +141,7 @@ def product_detail(request, product_id):
                     'reviews': reviews,
                     'form': form,
                     'error_message': 'You must purchase this product before submitting a review.',
+                    'initial_quantity': initial_quantity,
                 })
 
             form = ReviewForm(request.POST)
@@ -153,6 +166,7 @@ def product_detail(request, product_id):
         'form': form,
         'has_purchased': has_purchased,  # Pass this to the template to conditionally display the form
         'user_is_authenticated': request.user.is_authenticated,  # Pass this to check if the user is logged in
+        'initial_quantity': initial_quantity, 
     })
 
 @check_blacklisted
@@ -228,10 +242,7 @@ def add_to_cart(request, product_id):
         cart = get_cart(request.user)
         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
 
-        if not created:
-            cart_item.quantity += quantity
-        else:
-            cart_item.quantity = quantity
+        cart_item.quantity = quantity
         cart_item.save()
         # messages.success(request, f"{product.name} has been added to your cart.")
         cart_count = CartItem.objects.filter(cart=cart).count()

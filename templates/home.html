@@ -267,7 +267,11 @@
                     <div class="product-o product-o--radius product-o--hover-off u-h-100">
                         <div class="product-o__wrap">
                             <a class="aspect aspect--bg-grey aspect--square u-d-block" href="{% url 'shop:auction_detail' auction.id %}">
+                                {% if auction.product.image %}
                                 <img class="aspect__img" src="{{ auction.product.image.url }}" alt="{{ auction.product.name }}">
+                                {% else %}
+                                <div class="aspect__img" style="display: flex; align-items: center; justify-content: center; height: 100%;">No Image</div>
+                                {% endif %}
                             </a>
                             <div class="product-o__special-count-wrap">
                                 <div class="countdown countdown--style-special" data-countdown="{{ auction.end_time|date:'Y/m/d H:i:s' }}"></div>

@@ -123,9 +123,9 @@
                                                 <div class="quantity-wrapper">
                                                     <span class="quantity-decrease fas fa-minus"></span>
                                                     <input class="quantity-value" 
-                                                        type="text" 
+                                                        type="number" 
                                                         name="quantity" 
-                                                        value="1" 
+                                                        value="{{ initial_quantity }}" 
                                                         data-min="1" 
                                                         data-max="{{ product.stock }}">
                                                     <span class="quantity-increase fas fa-plus"></span>
