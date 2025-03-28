@@ -393,8 +393,7 @@
 
     document.getElementById("add-to-cart-form").onsubmit = function(event) {
         event.preventDefault();
-    
-        // Submit form via AJAX to prevent immediate redirect
+        
         fetch(this.action, {
             method: "POST",
             body: new FormData(this),
@@ -402,35 +401,37 @@
                 "X-Requested-With": "XMLHttpRequest",
             }
         })
-        .then(response => response.json())  // Parse the JSON response
+        .then(response => {
+            if (!response.ok) {
+                // If response status is not OK (like 400), parse as JSON for error message
+                return response.json().then(errorData => Promise.reject(errorData));
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.status === "success") {
-                // Show success message using SweetAlert
                 Swal.fire({
                     title: "Success!",
                     text: "Item added to cart!",
                     icon: "success",
                     showConfirmButton: false,
-                    timer: 1000  // Display message for 1 second
+                    timer: 1000
                 }).then(() => {
-                    // Update the cart count in the navigation bar
                     const cartCountElement = document.getElementById("cart-count");
                     if (cartCountElement) {
-                        cartCountElement.textContent = data.cart_count;  // Use the cart_count from the response
+                        cartCountElement.textContent = data.cart_count;
                     }
-                });
-            } else if (data.status === "error") {
-                Swal.fire({
-                    title: "Error!",
-                    text: data.message,
-                    icon: "error",
-                    showConfirmButton: false,
-                    timer: 1000
                 });
             }
         })
-        .catch(error => {
-            console.error("Error:", error);
+        .catch(errorData => {
+            Swal.fire({
+                title: "Error!",
+                text: errorData.message || "An error occurred",
+                icon: "error",
+                showConfirmButton: false,
+                timer: 1000
+            });
         });
     };
 </script>

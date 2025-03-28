@@ -231,8 +231,10 @@ def add_to_cart(request, product_id):
 
     # Prevent vendors from adding their own products to the cart
     if request.user == product.vendor:
-        messages.error(request, "You cannot purchase your own product.")
-        return redirect('shop:product_detail', product_id=product.id)
+        return JsonResponse({
+            "status": "error", 
+            "message": "You cannot purchase your own product."
+        }, status=400)
     
     
     if request.method == "POST":
