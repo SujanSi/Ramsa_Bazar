@@ -34,6 +34,10 @@ class BrandAdmin(admin.ModelAdmin):
 class SizeAdmin(admin.ModelAdmin):
     list_display=('name',)
     
+@admin.register(BidOrder)
+class BidOrderAdmin(admin.ModelAdmin):
+    list_display=('user','auction','product','bid_amount','ordered_at','payment_status','status',)
+    
 @admin.register(Reviews)
 class ReviewsAdmin(admin.ModelAdmin):
     list_display=('product','review','name','email','comment',)

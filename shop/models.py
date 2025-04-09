@@ -21,7 +21,7 @@ class Category(models.Model):
     
 class Brand(models.Model):
     name=models.CharField(max_length=255,null=True, blank=False,verbose_name="Brand Name",db_index=True)
-    image=models.ImageField(upload_to='media/brand_imgs/', blank=True,default=True)
+    image = models.ImageField(upload_to='media/brand_imgs/', blank=True, default=True,null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -224,6 +224,13 @@ class Auction(models.Model):
             user=self.highest_bidder,
             notification_type='win'
         ).exists():
+            if not hasattr(self, 'order'):
+                BidOrder.objects.create(
+                    user=self.highest_bidder,
+                    auction=self,
+                    product=self.product,
+                    bid_amount=self.highest_bid
+                )
             message = f"Congratulations! You won the auction for {self.product.name} with a bid of ${self.highest_bid}!"
             Notification.objects.create(
                 user=self.highest_bidder,
@@ -291,6 +298,29 @@ class Bid(models.Model):
         else:
             super().save(*args, **kwargs)
         
+class BidOrder(models.Model):
+    STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
+    )
+    Payment_Method = {
+        ('Cash on Delevery', 'Cash on Delevery'),
+        ('Khalti', 'Khalti'),
+        
+    }
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    auction = models.OneToOneField('Auction', on_delete=models.CASCADE, related_name='order')
+    product = models.ForeignKey('Product', on_delete=models.PROTECT)
+    bid_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    ordered_at = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(max_length=255, choices=Payment_Method, default='Cash on Delevery')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending') 
+    
+    def __str__(self):
+        return f"Order for {self.product.name} "
 
 
 class Reviews(models.Model):
