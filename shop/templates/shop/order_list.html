@@ -235,6 +235,7 @@
                        <th>End Time</th>
                        <th>Your Highest Bid</th>
                        <th>Status</th>
+                       <th>Pay</th>
                    </tr>
                </thead>
                <tbody>
@@ -251,6 +252,11 @@
                                    {% if data.auction.is_active %}Active{% else %}Ended{% endif %}
                                </span>
                            </td>
+                           <td data-label="Pay">
+                            <a href="{{ data.payment_url }}" class="btn btn-primary" {% if not data.auction.is_active %}disabled{% endif %}>
+                                Pay
+                            </a>
+                        </td>
                        </tr>
                    {% endfor %}
                </tbody>
