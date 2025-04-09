@@ -601,6 +601,8 @@ from django.db.models import Max
 @login_required
 def order_list(request):
     orders = Order.objects.filter(user=request.user).order_by('-created_at')
+    bid_orders = BidOrder.objects.filter(user=request.user).select_related('auction', 'product').order_by('-ordered_at')
+
 
     # Fetch auction participation history
     auction_data = (
@@ -616,12 +618,16 @@ def order_list(request):
     auctions = []
     for data in auction_data:
         auction = Auction.objects.get(id=data['auction'])
+        payment_url = f"/pay/{auction.id}/" 
         auctions.append({
             'auction': auction,
             'user_highest_bid': data['user_highest_bid'],
+            'payment_url': payment_url,
+
         })
     return render(request, 'shop/order_list.html', {
         'orders': orders,
+        'bid_orders': bid_orders,
         'auctions': auctions,  # Pass the full auction data to the template
     })
 

@@ -221,6 +221,53 @@
         </div>
     {% endif %}
 
+<!-- Bid Orders Section -->
+<h2 class="mb-3 mt-5">Your Bids</h2>
+{% if bid_orders %}
+    <div class="table-responsive">
+        <table class="bid-order-table table">
+            <thead class="table-header">
+                <tr>
+                    <th>Product</th>
+                    <th>Bid Amount</th>
+                    <th>Bid Time</th>
+                    <th>Status</th>
+                    <th>Pay</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bid in bid_orders %}
+                    <tr class="table-row">
+                        <td data-label="Product">{{ bid.auction.product.name }}</td>
+                        <td data-label="Bid Amount">रु {{ bid.bid_amount }}</td>
+                        <td data-label="Bid Time">{{ bid.ordered_at|date:"M d, Y H:i" }}</td>
+                        <td data-label="Status">
+                            <span class="status-badge 
+                                {% if bid.status == 'pending' %}badge-pending
+                                {% elif bid.status == 'won' %}badge-delivered
+                                {% elif bid.status == 'lost' %}badge-rejected{% endif %}">
+                                {{ bid.get_status_display }}
+                            </span>
+                        </td>
+                        <td data-label="Pay">
+                                <a href="" class="btn btn-sm btn-success rounded-pill">Pay Now</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="empty-state text-center py-5">
+        <div class="mb-4">
+            <i class="fas fa-hand-holding-usd fa-3x text-475569"></i>
+        </div>
+        <p class="mb-4">You haven’t placed any bids yet. Try your luck on exciting deals!</p>
+        <a href="{% url 'shop:auction_list' %}" class="btn detail-btn rounded-pill px-4">
+            🎯 Start Bidding
+        </a>
+    </div>
+{% endif %}
 
 
    <!-- Auction History Section -->
@@ -235,7 +282,6 @@
                        <th>End Time</th>
                        <th>Your Highest Bid</th>
                        <th>Status</th>
-                       <th>Pay</th>
                    </tr>
                </thead>
                <tbody>
@@ -252,11 +298,6 @@
                                    {% if data.auction.is_active %}Active{% else %}Ended{% endif %}
                                </span>
                            </td>
-                           <td data-label="Pay">
-                            <a href="{{ data.payment_url }}" class="btn btn-primary" {% if not data.auction.is_active %}disabled{% endif %}>
-                                Pay
-                            </a>
-                        </td>
                        </tr>
                    {% endfor %}
                </tbody>
