@@ -250,7 +250,15 @@
                             </span>
                         </td>
                         <td data-label="Pay">
-                                <a href="" class="btn btn-sm btn-success rounded-pill">Pay Now</a>
+                            {% if bid.status == 'pending' and bid.auction.highest_bidder == request.user and not bid.auction.is_active %}
+                            <a href="{% url 'shop:pay_auction' bid.auction.id %}" class="btn btn-sm btn-success rounded-pill">Pay Now</a>
+                            {% elif bid.status in 'paid,processing,shipped,delivered' %}
+                                <span class="btn btn-sm btn-info rounded-pill disabled">Paid</span>
+                            {% elif bid.status == 'cancelled' %}
+                                <span class="btn btn-sm btn-danger rounded-pill disabled">Reject</span>
+                            {% else %}
+                                <span class="text-muted">N/A</span>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}

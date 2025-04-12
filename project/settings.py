@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'user',
     'shop',
     'dashboard',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
@@ -192,3 +193,21 @@ LOGGING = {
 # Celery settings
 
 # CELERY_BROKER_URL = 'redis://127.0.0.1:6379'
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Adjust if using a different Redis setup
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Kathmandu'
+CELERYD_CONCURRENCY = 1  # Single worker for Windows stability
+
+
+from celery.schedules import crontab
+
+CELERY_BEAT_SCHEDULE = {
+    'finalize-ended-auctions': {
+        'task': 'shop.tasks.finalize_ended_auctions',
+        'schedule': crontab(minute='*/1'),  # Runs every minute
+    },
+}

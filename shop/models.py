@@ -205,16 +205,14 @@ class Auction(models.Model):
 
     def save(self, *args, **kwargs):
         now = timezone.now()
+        was_active = self.is_active
         # Update is_active based on current time and end_time
         self.is_active = self.end_time > now and self.start_time <= now
         super().save(*args, **kwargs)
         # Check if auction has ended and hasn't been notified yet
         # Notify winner only if auction has ended and hasn't been notified
-        if not self.is_active and self.highest_bidder and not Notification.objects.filter(
-            auction=self,
-            user=self.highest_bidder,
-            notification_type='win'
-        ).exists():
+       # Notify winner if auction just ended
+        if was_active and not self.is_active and self.highest_bidder:
             self.notify_winner()
 
 
@@ -305,6 +303,7 @@ class BidOrder(models.Model):
         ('shipped', 'Shipped'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
+        ('paid', 'Paid'),
     )
     Payment_Method = {
         ('Cash on Delevery', 'Cash on Delevery'),

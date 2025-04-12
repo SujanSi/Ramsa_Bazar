@@ -32,4 +32,7 @@ urlpatterns = [
     path('product/<int:product_id>/subscribe/', subscribe_to_price_drop, name='subscribe_to_price_drop'),
 
 
+    path('pay_auction/<int:auction_id>/', pay_auction, name='pay_auction'),
+    path('khalti_verify_auction/', khalti_verify_auction, name='khalti_verify_auction'),
+
 ]
