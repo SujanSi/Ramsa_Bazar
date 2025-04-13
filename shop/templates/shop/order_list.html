@@ -251,11 +251,34 @@
                         </td>
                         <td data-label="Pay">
                             {% if bid.status == 'pending' and bid.auction.highest_bidder == request.user and not bid.auction.is_active %}
-                            <a href="{% url 'shop:pay_auction' bid.auction.id %}" class="btn btn-sm btn-success rounded-pill">Pay Now</a>
-                            {% elif bid.status in 'paid,processing,shipped,delivered' %}
-                                <span class="btn btn-sm btn-info rounded-pill disabled">Paid</span>
-                            {% elif bid.status == 'cancelled' %}
-                                <span class="btn btn-sm btn-danger rounded-pill disabled">Reject</span>
+                                <form action="{% url 'shop:pay_auction' bid.auction.id %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success rounded-pill">
+                                        <i class="fas fa-wallet me-1"></i> Pay Now
+                                    </button>
+                                </form>
+                            {% elif bid.status == 'paid' %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i> Paid
+                                </span>
+                            {% elif bid.status == 'processing' %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-cog me-1"></i> Processing(PAID)
+                                </span>
+                            {% elif bid.status == 'shipped' %}
+                                {# Order shipped #}
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-truck me-1"></i> Shipped(PAID)
+                                </span>
+                                {% elif bid.status == 'delivered' %}
+                                {# Order delivered #}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-box-open me-1"></i> Delivered(PAID)
+                                </span>
+                                {% elif bid.status == 'cancelled' %}
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times-circle me-1"></i> Cancelled
+                                </span>
                             {% else %}
                                 <span class="text-muted">N/A</span>
                             {% endif %}
@@ -324,4 +347,14 @@
    {% endif %}
 </div>
 <script src="https://kit.fontawesome.com/your-kit-code.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check for payment completion parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('payment_completed')) {
+            // Force refresh to get updated status from server
+            window.location.href = "{% url 'shop:order_list' %}";
+        }
+    });
+    </script>
 {% endblock container %}

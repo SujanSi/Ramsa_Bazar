@@ -634,173 +634,160 @@ def order_list(request):
         'bid_orders': bid_orders,
         'auctions': auctions,  # Pass the full auction data to the template
     })
+
 @login_required
 def pay_auction(request, auction_id):
     """Handle payment for a won auction via Khalti."""
     auction = get_object_or_404(Auction, id=auction_id)
     bid_order = get_object_or_404(BidOrder, auction=auction, user=request.user)
 
-    if auction.highest_bidder != request.user or auction.is_active:
-        messages.error(request, "You cannot pay for this auction.")
+    # Validate payment conditions
+    if auction.highest_bidder != request.user:
+        messages.error(request, "You are not the winning bidder for this auction.")
         return redirect('shop:order_list')
-
+    
+    if auction.is_active:
+        messages.error(request, "Auction is still active. Payment unavailable.")
+        return redirect('shop:order_list')
+    
     if bid_order.status != 'pending':
         messages.info(request, "This auction has already been paid or processed.")
         return redirect('shop:order_list')
 
-    amount = int(bid_order.bid_amount * 100)  # Convert to paisa
-    logger.info(f"Amount in paisa: {amount}")
+    # Convert amount to paisa (minimum 1000 paisa = Rs 10)
+    amount = int(bid_order.bid_amount * 100)
     if amount < 1000:
-        messages.error(request, "Bid amount too low for payment (minimum रु 10).")
+        messages.error(request, "Minimum payment amount is Rs 10.")
         return redirect('shop:order_list')
 
+    # Prepare Khalti payload
     transaction_uuid = str(uuid.uuid4())
-    phone = (
-        request.user.profile.phone
-        if hasattr(request.user, 'profile') and request.user.profile.phone
-        else "9800000001"
-    )
-
+    user_profile = getattr(request.user, 'profile', None)
+    
     payload = {
-        "return_url": request.build_absolute_uri('/khalti_verify_auction'),
+        "return_url": request.build_absolute_uri(reverse('shop:khalti_verify_auction')),
         "website_url": "http://localhost:8000",
         "amount": amount,
         "purchase_order_id": transaction_uuid,
-        "purchase_order_name": f"Auction Payment for {auction.product.name}",
+        "purchase_order_name": f"Auction-{auction.id}-{bid_order.id}",
         "customer_info": {
             "name": "Customer",
             "email": request.user.email or "customer@example.com",
-            "phone": phone
+            "phone": user_profile.phone if user_profile else "9800000000"
         }
     }
-    logger.info(f"Khalti payload: {payload}")
 
     headers = {
         'Authorization': f'Key {KHALTI_SECRET_KEY}',
         'Content-Type': 'application/json',
     }
 
-    url = "https://test.khalti.com/api/v2/epayment/initiate/"
+    # Use the same Khalti endpoint as regular payments
+    url = "https://a.khalti.com/api/v2/epayment/initiate/"
+    
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=10)
-        logger.info(f"Khalti API response: {response.status_code} - {response.text}")
-        if response.status_code == 200:
-            new_res = response.json()
-            payment_url = new_res.get('payment_url')
-            if payment_url:
-                request.session['auction_bid_order_id'] = bid_order.id
-                return redirect(payment_url)
-            else:
-                logger.error("No payment_url in Khalti response")
-                messages.error(request, "Failed to initiate payment: No payment URL.")
-                return redirect('shop:order_list')
-        elif response.status_code == 503:
-            logger.error("Khalti service unavailable")
-            messages.error(request, "Payment service is temporarily unavailable. Please try again later.")
-            return redirect('shop:order_list')
-        elif response.status_code == 401:
-            logger.error("Invalid Khalti secret key")
-            messages.error(request, "Payment failed: Invalid configuration. Contact support.")
-            return redirect('shop:order_list')
-        else:
-            logger.error(f"Khalti API error: {response.status_code} - {response.text}")
-            messages.error(request, f"Payment failed: {response.text[:100]}...")
-            return redirect('shop:order_list')
-    except requests.exceptions.Timeout:
-        logger.error("Khalti API timed out")
-        messages.error(request, "Payment request timed out. Please try again.")
-        return redirect('shop:order_list')
-    except requests.exceptions.ConnectionError:
-        logger.error("Failed to connect to Khalti API")
-        messages.error(request, "Cannot connect to payment service. Please check your internet.")
-        return redirect('shop:order_list')
-    except requests.exceptions.HTTPError as e:
-        logger.error(f"Khalti HTTP error: {str(e)}")
-        messages.error(request, f"Payment error: {str(e)}")
-        return redirect('shop:order_list')
+        response.raise_for_status()  # Raises exception for 4XX/5XX status codes
+        
+        payment_data = response.json()
+        if not payment_data.get('payment_url'):
+            raise ValueError("No payment URL in response")
+            
+        # Store critical data in session
+        request.session['auction_payment'] = {
+            'auction_id': auction.id,
+            'bid_order_id': bid_order.id,
+            'transaction_uuid': transaction_uuid,
+            'amount': amount,
+        }
+        
+        return redirect(payment_data['payment_url'])
+        
     except requests.exceptions.RequestException as e:
         logger.error(f"Khalti API error: {str(e)}")
-        messages.error(request, f"Payment error: {str(e)}")
+        messages.error(request, f"Payment initiation failed: {str(e)}")
         return redirect('shop:order_list')
-
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        messages.error(request, "Payment processing failed. Please try again.")
+        return redirect('shop:order_list')
 @login_required
 def khalti_verify_auction(request):
     """Verify Khalti payment for an auction and update BidOrder."""
     if request.method != 'GET' or not request.GET.get('pidx'):
-        logger.error("Invalid request or no pidx provided")
         messages.error(request, "Invalid payment verification request.")
         return redirect('shop:order_list')
 
-    pidx = request.GET.get('pidx')
-    bid_order_id = request.session.get('auction_bid_order_id')
-    if not bid_order_id:
-        logger.error("No bid_order_id in session")
-        messages.error(request, "Payment session expired.")
+    # Retrieve session data
+    payment_data = request.session.get('auction_payment')
+    if not payment_data:
+        messages.error(request, "Payment session expired or invalid.")
         return redirect('shop:order_list')
-
-    bid_order = get_object_or_404(BidOrder, id=bid_order_id, user=request.user)
-
-    headers = {
-        'Authorization': f'Key {KHALTI_SECRET_KEY}',
-        'Content-Type': 'application/json',
-    }
-    url = "https://test.khalti.com/api/v2/epayment/lookup/"
-    payload = {"pidx": pidx}
 
     try:
+        pidx = request.GET['pidx']
+        bid_order = BidOrder.objects.get(
+            id=payment_data['bid_order_id'],
+            user=request.user,
+            status='pending'
+        )
+        
+        # Verify payment with Khalti
+        headers = {
+            'Authorization': f'Key {KHALTI_SECRET_KEY}',
+            'Content-Type': 'application/json',
+        }
+        url = "https://a.khalti.com/api/v2/epayment/lookup/"
+        payload = {"pidx": pidx}
+        
         response = requests.post(url, headers=headers, json=payload, timeout=10)
-        logger.info(f"Khalti verification response: {response.status_code} - {response.text}")
-        if response.status_code == 200:
-            result = response.json()
-            if result.get('status') == 'Completed':
-                bid_order.status = 'paid'
-                bid_order.payment_status = 'Khalti'
-                bid_order.save()
-
-                user_email = request.user.email
-                if user_email:
-                    subject = "Auction Payment Confirmation"
-                    message = f"""
-                    Dear {request.user.get_full_name() or 'Customer'},
-
-                    Your payment of रु {bid_order.bid_amount} for {bid_order.product.name} has been successfully processed via Khalti!
-
-                    **Order Details:**
-                    - Product: {bid_order.product.name}
-                    - Bid Amount: रु {bid_order.bid_amount}
-                    - Payment Method: Khalti
-
-                    Your item will be processed soon. Thank you for bidding with us!
-
-                    Regards,
-                    Your Store Team
-                    """
-                    try:
-                        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [user_email], fail_silently=False)
-                        logger.info(f"Confirmation email sent to {user_email}")
-                    except Exception as e:
-                        logger.error(f"Failed to send email: {str(e)}")
-                        messages.warning(request, "Payment successful, but email confirmation failed.")
-
-                del request.session['auction_bid_order_id']
-                messages.success(request, "Payment successful! Your auction order is being processed.")
-                return redirect('shop:order_list')
-            else:
-                logger.error(f"Khalti payment not completed: {result}")
-                messages.error(request, "Payment verification failed.")
-                return redirect('shop:order_list')
-        else:
-            logger.error(f"Khalti verification failed: {response.text}")
-            messages.error(request, "Payment verification failed.")
-            return redirect('shop:order_list')
+        response.raise_for_status()
+        
+        verification_data = response.json()
+        
+        if verification_data.get('status') != 'Completed':
+            raise ValueError("Payment not completed")
+            
+        # Payment successful - update bid order
+        if verification_data.get('status') == 'Completed':
+            bid_order.status = 'paid'  # Make sure this matches your STATUS_CHOICES
+            bid_order.payment_status = 'Khalti'
+            bid_order.save()
+        
+        # Send confirmation email
+        try:
+            send_mail(
+                subject=f"Auction Payment Confirmation - Order #{bid_order.id}",
+                message=render_to_string('emails/auction_payment.txt', {
+                    'user': request.user,
+                    'bid_order': bid_order,
+                }),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[request.user.email],
+                fail_silently=False
+            )
+        except Exception as e:
+            logger.error(f"Failed to send confirmation email: {str(e)}")
+        
+        # Clean up session
+        del request.session['auction_payment']
+        
+        messages.success(request, "Payment successful! Your order is being processed.")
+        return redirect('shop:order_list')
+        
+    except BidOrder.DoesNotExist:
+        messages.error(request, "Order not found or already processed.")
     except requests.exceptions.RequestException as e:
         logger.error(f"Khalti verification error: {str(e)}")
-        messages.error(request, "Error verifying payment. Please try again.")
-        return redirect('shop:order_list')
+        messages.error(request, "Payment verification failed. Please contact support.")
+    except Exception as e:
+        logger.error(f"Payment processing error: {str(e)}")
+        messages.error(request, "Payment processing failed. Please contact support.")
     
+    return redirect('shop:order_list')
 
 
-
+from django.urls import reverse
 @login_required
 def request_refund(request, order_id):
     order = Order.objects.get(id=order_id, user=request.user)

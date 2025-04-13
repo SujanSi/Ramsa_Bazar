@@ -200,7 +200,8 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kathmandu'
-CELERYD_CONCURRENCY = 1  # Single worker for Windows stability
+CELERYD_CONCURRENCY = 4  # Single worker for Windows stability
+CELERY_WORKER_POOL = 'eventlet'
 
 
 from celery.schedules import crontab
